@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/firebase/firebase-tools/master/schema/firestore-blueprint.json",
+  "entities": {
+    "users": {
+      "title": "User Profiles",
+      "description": "Stores user account profile information",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "User UID from Firebase Auth"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the user"
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address"
+        },
+        "avatar": {
+          "type": "string",
+          "description": "User avatar emoji or image url"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user registered"
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "description": "Timestamp of last login"
+        }
+      },
+      "required": ["id", "name", "email"]
+    }
+  },
+  "rules": {
+    "users": {
+      "read": "request.auth != null",
+      "write": "request.auth != null && request.auth.uid == userId"
+    }
+  }
+}

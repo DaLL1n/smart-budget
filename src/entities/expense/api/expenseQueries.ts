@@ -1,0 +1,72 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Expense, CreateExpenseInput } from '../model/types';
+import { 
+  fetchPersonalExpenses, 
+  createPersonalExpense, 
+  deletePersonalExpense,
+  getLocalExpenses
+} from './expenseService';
+
+export const expenseQueryKeys = {
+  all: ['expenses'] as const,
+  personal: (userId?: string) => [...expenseQueryKeys.all, 'personal', userId] as const,
+};
+
+/**
+ * Hook to query personal expenses with synchronous local initialData to eliminate layout jumps
+ */
+export function usePersonalExpensesQuery(userId?: string) {
+  return useQuery({
+    queryKey: expenseQueryKeys.personal(userId),
+    queryFn: async () => {
+      if (!userId) return [];
+      return fetchPersonalExpenses(userId);
+    },
+    initialData: () => {
+      if (!userId) return [];
+      return getLocalExpenses(userId);
+    },
+    enabled: !!userId,
+    staleTime: 1000 * 60 * 3, // 3 minutes cache
+  });
+}
+
+/**
+ * Hook to create a new expense with automatic cache invalidation
+ */
+export function useCreateExpenseMutation(userId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateExpenseInput & { familyId?: string | null }) => {
+      return createPersonalExpense({
+        userId,
+        amount: input.amount,
+        category: input.category,
+        storeId: input.storeId,
+        date: input.date,
+        title: input.title,
+        familyId: input.familyId,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: expenseQueryKeys.personal(userId) });
+    },
+  });
+}
+
+/**
+ * Hook to delete an expense with automatic cache invalidation
+ */
+export function useDeleteExpenseMutation(userId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ expenseId }: { expenseId: string }) => {
+      return deletePersonalExpense(expenseId, userId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: expenseQueryKeys.personal(userId) });
+    },
+  });
+}
