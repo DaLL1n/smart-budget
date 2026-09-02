@@ -7,15 +7,16 @@
 *   **Управление данными и кэширование:** TanStack Query (`@tanstack/react-query` v5) с персистентным оффлайн-кэшем через `@tanstack/react-query-persist-client` и `idb-keyval` (IndexedDB).
 *   **Маршрутизация:** TanStack Router (`@tanstack/react-router` v1) с типобезопасными маршрутами и централизованным `defaultErrorComponent`.
 *   **Реактивное локальное состояние:** TanStack Store (`@tanstack/store`, `@tanstack/react-store`).
+*   **Контроль асинхронности, дебаунс и rate limiting:** TanStack Pacer (`@tanstack/react-pacer`, `@tanstack/pacer`) — дебаунс поиска магазинов и продуктов, батчинг сетевых запросов и троттлинг запросов к AI-ассистенту.
 *   **Визуализация и графики:** TanStack Charts (`@tanstack/charts`).
+*   **Таблицы и списки покупок:** TanStack Table (`@tanstack/react-table` v9) — управление табличными данными, умными списками продуктов по магазинам, сортировкой, фильтрацией и группировкой.
 *   **Стилизация:** Tailwind CSS v4.1.14 (прямая нативная интеграция через плагин `@tailwindcss/vite`).
 *   **Анимации:** Motion v12.23.24 (`motion/react`).
 *   **Иконки:** Lucide React (^0.546.0).
 *   **Отказоустойчивость:** Двухуровневый `ErrorBoundary` (глобальный в `app/` + изолированные предохранители виджетов `QueryErrorBoundary`) с интеграцией `QueryErrorResetBoundary` и автоматической защитой от утечек информации в продакшене (`import.meta.env.DEV`).
 *   **База данных и облачный бэкенд:** 
-    - **Supabase** (`@supabase/supabase-js` ^2.113.0) — реляционная БД (PostgreSQL) для пользователей (`public.users`), семейных пространств (`public.families`) и расходов (`public.expenses`).
-    - **Firebase** (`firebase` ^12.18.0) — авторизация пользователей (Firebase Auth) и обратная совместимость профилей (Firestore).
-*   **Сетевой слой и валидация:** `axios` (^1.20.0) для HTTP-интеграций, `zod` (^4.5.4) для строгой runtime-валидации DTO и контрактов.
+    - **Supabase** (`@supabase/supabase-js` ^2.113.0) — единая полнофункциональная база данных (PostgreSQL) и аутентификация пользователей (Supabase Auth). Все данные пользователей (`public.users`), семейных пространств (`public.families`) и расходов (`public.expenses`) хранятся и управляются строго через Supabase.
+*   **Сетевой слой, переменные окружения и валидация:** `axios` (^1.20.0) для HTTP-интеграций, `.env` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`), `zod` (^4.5.4) для строгой runtime-валидации DTO и контрактов.
 
 ## 2. Локальный запуск и окружение (Dev Environment)
 *   **Порт фронтенда (Vite):** Запуск строго на порту `3000` (`vite --port=3000 --host=0.0.0.0`).
