@@ -234,3 +234,81 @@ export async function deletePersonalExpense(expenseId: string, userId: string): 
   const updated = local.filter((e) => e.id !== expenseId);
   saveLocalExpenses(userId, updated);
 }
+
+/**
+ * Synchronous local retrieval of family expenses from cache
+ */
+export function getLocalFamilyExpenses(familyId: string, memberIds: string[] = []): Expense[] {
+  const result: Expense[] = [];
+  const seenIds = new Set<string>();
+
+  // Check cached family-specific expenses
+  try {
+    const raw = localStorage.getItem(`${LOCAL_EXPENSES_KEY}_family_${familyId}`);
+    if (raw) {
+      const list = JSON.parse(raw) as Expense[];
+      list.forEach(e => {
+        if (!seenIds.has(e.id)) {
+          seenIds.add(e.id);
+          result.push(e);
+        }
+      });
+    }
+  } catch {}
+
+  // Aggregate personal expenses of family members
+  memberIds.forEach(memberId => {
+    const memList = getLocalExpenses(memberId);
+    memList.forEach(e => {
+      if (!seenIds.has(e.id)) {
+        seenIds.add(e.id);
+        result.push(e);
+      }
+    });
+  });
+
+  return result.sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/**
+ * Fetches all family expenses from Supabase with fallback to member local caches
+ */
+export async function fetchFamilyExpenses(familyId: string, memberIds: string[] = []): Promise<Expense[]> {
+  const supabaseResults: Expense[] = [];
+
+  try {
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('family_id', familyId)
+      .order('date', { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      data.forEach((row) => {
+        supabaseResults.push({
+          id: row.id,
+          userId: row.user_id,
+          familyId: row.family_id,
+          amount: Number(row.amount),
+          category: row.category as ExpenseCategory,
+          storeId: row.store_id,
+          date: row.date,
+          title: row.title || 'Покупка продуктов',
+          receiptItems: (row.receipt_items as any) || [],
+          createdAt: row.created_at,
+        });
+      });
+    }
+  } catch (err) {
+    console.warn('Supabase fetch family expenses note (using local cache):', err);
+  }
+
+  if (supabaseResults.length > 0) {
+    try {
+      localStorage.setItem(`${LOCAL_EXPENSES_KEY}_family_${familyId}`, JSON.stringify(supabaseResults));
+    } catch {}
+    return supabaseResults;
+  }
+
+  return getLocalFamilyExpenses(familyId, memberIds);
+}

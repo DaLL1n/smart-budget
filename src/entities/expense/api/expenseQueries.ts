@@ -4,12 +4,15 @@ import {
   fetchPersonalExpenses, 
   createPersonalExpense, 
   deletePersonalExpense,
-  getLocalExpenses
+  getLocalExpenses,
+  fetchFamilyExpenses,
+  getLocalFamilyExpenses
 } from './expenseService';
 
 export const expenseQueryKeys = {
   all: ['expenses'] as const,
   personal: (userId?: string) => [...expenseQueryKeys.all, 'personal', userId] as const,
+  family: (familyId?: string) => [...expenseQueryKeys.all, 'family', familyId] as const,
 };
 
 /**
@@ -27,6 +30,25 @@ export function usePersonalExpensesQuery(userId?: string) {
       return getLocalExpenses(userId);
     },
     enabled: !!userId,
+    staleTime: 1000 * 60 * 3, // 3 minutes cache
+  });
+}
+
+/**
+ * Hook to query family expenses with synchronous initialData from member caches
+ */
+export function useFamilyExpensesQuery(familyId?: string | null, memberIds: string[] = []) {
+  return useQuery({
+    queryKey: expenseQueryKeys.family(familyId || undefined),
+    queryFn: async () => {
+      if (!familyId) return [];
+      return fetchFamilyExpenses(familyId, memberIds);
+    },
+    initialData: () => {
+      if (!familyId) return [];
+      return getLocalFamilyExpenses(familyId, memberIds);
+    },
+    enabled: !!familyId,
     staleTime: 1000 * 60 * 3, // 3 minutes cache
   });
 }
