@@ -1,5 +1,4 @@
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { supabase, db } from '../../../shared/api';
+import { supabase } from '../../../shared/api';
 import { User, userActions } from '../../user';
 import { Family, FamilyMember, addFamilyMemberInputSchema } from '../model/schema';
 import { familyActions } from '../model/familyStore';
@@ -219,42 +218,7 @@ export async function addFamilyMember(currentUser: User, targetEmail: string): P
     console.warn('Error querying user by email in Supabase:', err);
   }
 
-  // 2. Fallback to Firestore (for users registered before Supabase migration)
-  if (!targetUser) {
-    try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('email', '==', normalizedEmail));
-      const snap = await getDocs(q);
-      if (!snap.empty) {
-        const docData = snap.docs[0].data();
-        targetUser = {
-          id: snap.docs[0].id,
-          name: docData.name || normalizedEmail.split('@')[0],
-          email: docData.email || normalizedEmail,
-          familyId: docData.familyId || null,
-        };
-
-        // Sync found Firestore user directly into Supabase
-        await supabase.from('users').upsert(
-          {
-            id: targetUser.id,
-            email: targetUser.email.toLowerCase(),
-            name: targetUser.name,
-            family_id: targetUser.familyId || null,
-            avatar: docData.avatar || '🥑',
-            avatar_color: docData.avatarColor || 'from-emerald-400 to-teal-500',
-            is_onboarded: docData.isOnboarded ?? true,
-            profile: docData.profile || {},
-          },
-          { onConflict: 'id' }
-        );
-      }
-    } catch (err) {
-      console.warn('Firestore fallback user query note:', err);
-    }
-  }
-
-  // 3. Fallback to local session check & registered users registry
+  // 2. Fallback to local session check & registered users registry
   if (!targetUser) {
     const registryRaw = localStorage.getItem('smart_budget_registered_users_v1');
     if (registryRaw) {

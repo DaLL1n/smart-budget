@@ -26,10 +26,12 @@
     - `npm run lint` — проверка статической типизации (`tsc --noEmit`).
 
 ## 3. Оркестрация агентов и навыки (Multi-Agent Skills)
-Для выполнения задач агент должен динамически переключаться между тремя специализированными локальными навыками, расположенными в папке `.agent/skills/`:
-1.  **Написание кода:** Активируй навык `feature-developer` (`.agent/skills/feature-developer/SKILL.md`).
-2.  **Тестирование логики:** Активируй навык `feature-tester` (`.agent/skills/feature-tester/SKILL.md`).
-3.  **Тестирование визуального UI:** Активируй навык `browser-ui-tester` (`.agent/skills/browser-ui-tester/SKILL.md`).
+Для выполнения задач агент должен строго переключаться между специализированными локальными навыками [cite: 13, 29, 68]:
+1.  **Написание кода:** Активируй навык `feature-developer` [.agent/skills/feature-developer/SKILL.md] [cite: 13, 29].
+    *   *Дочерний навык:* `frontend-design` [.agent/skills/frontend-design/SKILL.md] (используется для верстки компонентов) [cite: 13].
+2.  **Тестирование логики и E2E:** Активируй навык `feature-tester` [.agent/skills/feature-tester/SKILL.md] [cite: 13, 29].
+    *   *Дочерний навык:* `webapp-testing` [.agent/skills/webapp-testing/SKILL.md] (используется для Playwright & Chrome Automation) [cite: 13, 14].
+3.  **Тестирование визуального UI:** Активируй навык `browser-ui-tester` [.agent/skills/browser-ui-tester/SKILL.md] [cite: 13, 29].
 
 ### Протокол последовательного конвейера разработки (Sequential Pipeline):
 - **Шаг 1:** Разработчик пишет код и создает манифест передачи контекста `.agent/handoff.md`.

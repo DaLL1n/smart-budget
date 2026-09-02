@@ -1,6 +1,0 @@
-{
-  "name": "Смарт-Бюджет на Продукты",
-  "description": "Система планирования продуктового бюджета с пошаговой настройкой аккаунта после регистрации.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

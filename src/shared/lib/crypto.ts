@@ -6,7 +6,7 @@ export async function hashPassword(password: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-export function getFirestoreUserId(email: string): string {
+export function generateUserId(email: string): string {
   const cleanEmail = email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
   return `usr_${cleanEmail}`;
 }

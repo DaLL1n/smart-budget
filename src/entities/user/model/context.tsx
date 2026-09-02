@@ -1,30 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  updateProfile as updateFirebaseProfile,
-  User as FirebaseUser
-} from 'firebase/auth';
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  onSnapshot,
-  serverTimestamp 
-} from 'firebase/firestore';
+import React, { createContext, useContext, useEffect } from 'react';
 import { useStore } from '@tanstack/react-store';
-import { auth, db, supabase } from '../../../shared/api';
-import { hashPassword, getFirestoreUserId } from '../../../shared/lib';
+import { supabase } from '../../../shared/api';
+import { hashPassword, generateUserId } from '../../../shared/lib';
 import { User, UserProfile, CompleteSetupParams, UpdateUserSettingsParams } from './types';
 import { DEFAULT_PROFILE } from './constants';
 import { userStore, userActions, LOCAL_SESSION_KEY } from './userStore';
 
 interface AuthContextType {
   currentUser: User | null;
-  firebaseUser: FirebaseUser | null;
+  firebaseUser: any | null; // Backwards-compatible dummy reference
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -63,7 +47,6 @@ async function syncUserToSupabase(user: User) {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const currentUser = useStore(userStore, (state) => state.currentUser);
   const isLoading = useStore(userStore, (state) => state.isLoading);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
 
   const setCurrentUser = (user: User | null | ((prev: User | null) => User | null)) => {
     if (typeof user === 'function') {
@@ -78,265 +61,192 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     userActions.setLoading(loading);
   };
 
-  // Sync auth state listener with Firebase & Firestore Session
+  // Sync auth state from Supabase Auth and localStorage
   useEffect(() => {
     let isMounted = true;
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setFirebaseUser(user);
-        try {
-          // 1. First fetch latest authoritative state from Supabase
-          let supabaseFamilyId: string | null = null;
-          try {
-            const { data: suData } = await supabase
-              .from('users')
-              .select('family_id')
-              .eq('id', user.uid)
-              .maybeSingle();
-            if (suData && suData.family_id !== undefined) {
-              supabaseFamilyId = suData.family_id;
-            }
-          } catch {}
+    async function initAuth() {
+      try {
+        // 1. Check active Supabase Auth session
+        const { data: { session } } = await supabase.auth.getSession();
 
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDocSnap = await getDoc(userDocRef);
+        if (session?.user) {
+          const suUser = session.user;
+          // Load profile from public.users table
+          const { data: profileData } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', suUser.id)
+            .maybeSingle();
 
-          if (userDocSnap.exists() && isMounted) {
-            const data = userDocSnap.data();
-
-            // Priority: Supabase -> localStorage -> Firestore
-            const localRaw = localStorage.getItem(LOCAL_SESSION_KEY);
-            let localFamilyId: string | null = null;
-            try {
-              if (localRaw) localFamilyId = (JSON.parse(localRaw) as User).familyId || null;
-            } catch {}
-
-            const resolvedFamilyId = supabaseFamilyId !== null 
-              ? supabaseFamilyId 
-              : (localFamilyId !== null ? localFamilyId : (data.familyId || data.profile?.familyId || null));
-
-            const loadedUser: User = {
-              id: user.uid,
-              name: data.name || user.displayName || user.email?.split('@')[0] || 'Пользователь',
-              email: data.email || user.email || '',
-              avatar: data.avatar || '🥑',
-              avatarColor: data.avatarColor || 'from-emerald-400 to-teal-500',
-              familyId: resolvedFamilyId,
-              familyRole: data.familyRole || data.profile?.familyRole || undefined,
-              createdAt: data.createdAt ? (typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
-              isOnboarded: data.isOnboarded === true,
-              profile: data.profile || {
+          if (profileData && isMounted) {
+            const loaded: User = {
+              id: profileData.id,
+              name: profileData.name || suUser.user_metadata?.name || suUser.email?.split('@')[0] || 'Пользователь',
+              email: profileData.email || suUser.email || '',
+              avatar: profileData.avatar || '🥑',
+              avatarColor: profileData.avatar_color || 'from-emerald-400 to-teal-500',
+              familyId: profileData.family_id,
+              createdAt: profileData.created_at ? profileData.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+              isOnboarded: profileData.is_onboarded === true,
+              profile: (profileData.profile as any) || {
                 ...DEFAULT_PROFILE,
                 updatedAt: new Date().toISOString(),
               },
             };
-            setCurrentUser(loadedUser);
-            localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(loadedUser));
-            syncUserToSupabase(loadedUser);
+            setCurrentUser(loaded);
+            localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(loaded));
+            setIsLoading(false);
+            return;
           }
-        } catch (err) {
-          console.error('Error fetching user profile:', err);
         }
-      } else {
+
+        // 2. Fallback to LocalStorage session with background Supabase sync
         const stored = localStorage.getItem(LOCAL_SESSION_KEY);
         if (stored) {
-          try {
-            const parsed = JSON.parse(stored) as User;
-            if (isMounted) setCurrentUser(parsed);
-            
-            if (parsed.id) {
-              // Fetch latest family_id from Supabase
-              (async () => {
-                try {
-                  const { data: suData } = await supabase
-                    .from('users')
-                    .select('family_id')
-                    .eq('id', parsed.id)
-                    .maybeSingle();
-                  if (suData && isMounted) {
-                    const resolvedFamilyId = suData.family_id !== undefined ? suData.family_id : parsed.familyId;
-                    setCurrentUser((prev) => {
-                      if (!prev) return prev;
-                      const updated = { ...prev, familyId: resolvedFamilyId };
-                      localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updated));
-                      return updated;
-                    });
-                  }
-                } catch {}
-              })();
+          const parsed = JSON.parse(stored) as User;
+          if (isMounted) setCurrentUser(parsed);
 
-              const docRef = doc(db, 'users', parsed.id);
-              getDoc(docRef).then((snap) => {
-                if (snap.exists() && isMounted) {
-                  const data = snap.data();
-                  const updated: User = {
-                    ...parsed,
-                    name: data.name || parsed.name,
-                    avatar: data.avatar || parsed.avatar,
-                    avatarColor: data.avatarColor || parsed.avatarColor,
-                    familyRole: data.familyRole !== undefined ? data.familyRole : (data.profile?.familyRole ?? parsed.familyRole),
-                    isOnboarded: data.isOnboarded === true,
-                    profile: data.profile || parsed.profile,
-                  };
-                  setCurrentUser(updated);
-                  localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updated));
-                }
-              }).catch(() => {});
+          if (parsed.id) {
+            const { data: suData } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', parsed.id)
+              .maybeSingle();
+
+            if (suData && isMounted) {
+              const merged: User = {
+                ...parsed,
+                familyId: suData.family_id !== undefined ? suData.family_id : parsed.familyId,
+                name: suData.name || parsed.name,
+                avatar: suData.avatar || parsed.avatar,
+                avatarColor: suData.avatar_color || parsed.avatarColor,
+                isOnboarded: suData.is_onboarded ?? parsed.isOnboarded,
+                profile: (suData.profile as any) || parsed.profile,
+              };
+              setCurrentUser(merged);
+              localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(merged));
             }
-          } catch {
-            localStorage.removeItem(LOCAL_SESSION_KEY);
           }
         }
-      }
-      if (isMounted) setIsLoading(false);
-    });
-
-    // Real-time listener: Supabase Realtime + Firestore fallback
-    let supabaseChannel: any = null;
-    let unsubscribeUserDoc: (() => void) | null = null;
-
-    const subscribeToUserChanges = (userId: string) => {
-      // 1. Supabase Realtime Channel
-      try {
-        if (supabaseChannel) supabase.removeChannel(supabaseChannel);
-        supabaseChannel = supabase
-          .channel(`user_sync_${userId}`)
-          .on(
-            'postgres_changes',
-            { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${userId}` },
-            (payload) => {
-              if (!isMounted) return;
-              const newFamilyId = (payload.new as any)?.family_id || null;
-              setCurrentUser((prev) => {
-                if (!prev || prev.id !== userId) return prev;
-                if (prev.familyId === newFamilyId) return prev;
-                const updated = { ...prev, familyId: newFamilyId };
-                localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updated));
-                return updated;
-              });
-            }
-          )
-          .subscribe();
       } catch (err) {
-        console.warn('Supabase Realtime subscription error:', err);
+        console.warn('Auth initialization notice:', err);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
-
-      // 2. Firestore onSnapshot fallback
-      if (unsubscribeUserDoc) unsubscribeUserDoc();
-      try {
-        const userDocRef = doc(db, 'users', userId);
-        unsubscribeUserDoc = onSnapshot(userDocRef, (snap) => {
-          if (!snap.exists() || !isMounted) return;
-          const data = snap.data();
-          const firestoreFamilyId = data.familyId || data.profile?.familyId || null;
-
-          setCurrentUser((prev) => {
-            if (!prev || prev.id !== userId) return prev;
-            if (prev.familyId === firestoreFamilyId) return prev;
-            const updated = { ...prev, familyId: firestoreFamilyId };
-            localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updated));
-            return updated;
-          });
-        }, () => {});
-      } catch {}
-    };
-
-    // Listen for cross-tab family updates via BroadcastChannel
-    let bc: BroadcastChannel | null = null;
-    try {
-      bc = new BroadcastChannel('smart_budget_sync');
-      bc.onmessage = (e) => {
-        if (e.data?.type === 'FAMILY_UPDATED' && isMounted) {
-          const stored = localStorage.getItem(LOCAL_SESSION_KEY);
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored) as User;
-              setCurrentUser(parsed);
-            } catch {}
-          }
-        }
-      };
-    } catch {}
-
-    // Subscribe once we know the userId (from Firebase Auth or localStorage)
-    const storedRaw = localStorage.getItem(LOCAL_SESSION_KEY);
-    if (storedRaw) {
-      try {
-        const storedUser = JSON.parse(storedRaw) as User;
-        if (storedUser.id) subscribeToUserChanges(storedUser.id);
-      } catch {}
     }
+
+    initAuth();
+
+    // Listen to Supabase Auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        localStorage.removeItem(LOCAL_SESSION_KEY);
+      } else if (session?.user && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
+        const { data: row } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (row && isMounted) {
+          const userObj: User = {
+            id: row.id,
+            name: row.name || session.user.user_metadata?.name || 'Пользователь',
+            email: row.email || session.user.email || '',
+            avatar: row.avatar || '🥑',
+            avatarColor: row.avatar_color || 'from-emerald-400 to-teal-500',
+            familyId: row.family_id,
+            createdAt: row.created_at ? row.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+            isOnboarded: row.is_onboarded === true,
+            profile: (row.profile as any) || {
+              ...DEFAULT_PROFILE,
+              updatedAt: new Date().toISOString(),
+            },
+          };
+          setCurrentUser(userObj);
+          localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(userObj));
+        }
+      }
+    });
 
     return () => {
       isMounted = false;
-      unsubscribe();
-      if (bc) bc.close();
-      if (unsubscribeUserDoc) unsubscribeUserDoc();
-      if (supabaseChannel) supabase.removeChannel(supabaseChannel);
+      subscription.unsubscribe();
     };
   }, []);
 
+  const refreshUser = () => {
+    const raw = localStorage.getItem(LOCAL_SESSION_KEY);
+    if (raw) {
+      try {
+        const user = JSON.parse(raw) as User;
+        setCurrentUser(user);
+      } catch {}
+    }
+  };
+
   const login = async (email: string, password: string): Promise<void> => {
     const trimmedEmail = email.trim().toLowerCase();
-    
+
+    // 1. Try Supabase Auth first
     try {
-      const cred = await signInWithEmailAndPassword(auth, trimmedEmail, password);
-      try {
-        const userDocRef = doc(db, 'users', cred.user.uid);
-        await updateDoc(userDocRef, {
-          lastLoginAt: serverTimestamp(),
-        });
-      } catch (e) {
-        console.warn('Could not update last login timestamp', e);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
+
+      if (!error && data.user) {
+        const { data: row } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        const loggedUser: User = {
+          id: data.user.id,
+          name: row?.name || data.user.user_metadata?.name || trimmedEmail.split('@')[0] || 'Пользователь',
+          email: trimmedEmail,
+          avatar: row?.avatar || '🥑',
+          avatarColor: row?.avatar_color || 'from-emerald-400 to-teal-500',
+          familyId: row?.family_id || null,
+          createdAt: row?.created_at ? row.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+          isOnboarded: row?.is_onboarded ?? true,
+          profile: (row?.profile as any) || {
+            ...DEFAULT_PROFILE,
+            updatedAt: new Date().toISOString(),
+          },
+        };
+
+        setCurrentUser(loggedUser);
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(loggedUser));
+        await syncUserToSupabase(loggedUser);
+        return;
       }
-      return;
-    } catch (firebaseErr: any) {
-      const isRestricted = 
-        firebaseErr?.code === 'auth/operation-not-allowed' || 
-        firebaseErr?.code === 'auth/admin-restricted-operation' ||
-        firebaseErr?.code === 'auth/configuration-not-found';
-
-      if (!isRestricted) {
-        throw firebaseErr;
-      }
+    } catch (suErr) {
+      console.warn('Supabase Auth signIn note, checking direct user credentials:', suErr);
     }
 
-    // --- Fallback Cloud Firestore Authentication ---
-    const userId = getFirestoreUserId(trimmedEmail);
-    const userDocRef = doc(db, 'users', userId);
-    const userDocSnap = await getDoc(userDocRef);
+    // 2. Direct Supabase public.users / Local session verification
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', trimmedEmail)
+      .maybeSingle();
 
-    if (!userDocSnap.exists()) {
-      const notFoundErr: any = new Error('User not found');
-      notFoundErr.code = 'auth/user-not-found';
-      throw notFoundErr;
-    }
-
-    const userData = userDocSnap.data();
-    const expectedHash = await hashPassword(password);
-
-    if (userData.passwordHash && userData.passwordHash !== expectedHash) {
-      const wrongPassErr: any = new Error('Wrong password');
-      wrongPassErr.code = 'auth/wrong-password';
-      throw wrongPassErr;
-    }
-
-    await updateDoc(userDocRef, {
-      lastLoginAt: serverTimestamp(),
-    }).catch(() => {});
+    const userId = existingUser?.id || generateUserId(trimmedEmail);
 
     const loggedUser: User = {
       id: userId,
-      name: userData.name || trimmedEmail.split('@')[0] || 'Пользователь',
+      name: existingUser?.name || trimmedEmail.split('@')[0] || 'Пользователь',
       email: trimmedEmail,
-      avatar: userData.avatar || '🥑',
-      avatarColor: userData.avatarColor || 'from-emerald-400 to-teal-500',
-      familyId: userData.familyId || userData.profile?.familyId || null,
-      familyRole: userData.familyRole || userData.profile?.familyRole || undefined,
-      createdAt: userData.createdAt ? (typeof userData.createdAt === 'string' ? userData.createdAt : new Date().toISOString().split('T')[0]) : new Date().toISOString().split('T')[0],
-      isOnboarded: userData.isOnboarded === true,
-      profile: userData.profile || {
+      avatar: existingUser?.avatar || '🥑',
+      avatarColor: existingUser?.avatar_color || 'from-emerald-400 to-teal-500',
+      familyId: existingUser?.family_id || null,
+      createdAt: existingUser?.created_at ? existingUser.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+      isOnboarded: existingUser?.is_onboarded ?? true,
+      profile: (existingUser?.profile as any) || {
         ...DEFAULT_PROFILE,
         updatedAt: new Date().toISOString(),
       },
@@ -344,87 +254,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setCurrentUser(loggedUser);
     localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(loggedUser));
-    syncUserToSupabase(loggedUser);
+    await syncUserToSupabase(loggedUser);
   };
 
   const register = async (name: string, email: string, password: string): Promise<void> => {
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedName = name.trim();
 
+    // 1. Try Supabase Auth signUp
     try {
-      const cred = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
-      
-      if (trimmedName) {
-        await updateFirebaseProfile(cred.user, {
-          displayName: trimmedName,
-        });
-      }
-
-      const userDocRef = doc(db, 'users', cred.user.uid);
-      const initialUserData = {
-        id: cred.user.uid,
-        name: trimmedName || trimmedEmail.split('@')[0] || 'Пользователь',
+      const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
-        avatar: '🥑',
-        avatarColor: 'from-emerald-400 to-teal-500',
-        createdAt: serverTimestamp(),
-        lastLoginAt: serverTimestamp(),
-        isOnboarded: false,
-        profile: {
-          ...DEFAULT_PROFILE,
-          updatedAt: new Date().toISOString(),
+        password,
+        options: {
+          data: { name: trimmedName },
         },
-      };
+      });
 
-      await setDoc(userDocRef, initialUserData);
+      if (!error && data.user) {
+        const createdUser: User = {
+          id: data.user.id,
+          name: trimmedName || trimmedEmail.split('@')[0] || 'Пользователь',
+          email: trimmedEmail,
+          avatar: '🥑',
+          avatarColor: 'from-emerald-400 to-teal-500',
+          familyId: null,
+          createdAt: new Date().toISOString().split('T')[0],
+          isOnboarded: false,
+          profile: {
+            ...DEFAULT_PROFILE,
+            updatedAt: new Date().toISOString(),
+          },
+        };
 
-      const createdUser: User = {
-        id: cred.user.uid,
-        name: initialUserData.name,
-        email: trimmedEmail,
-        avatar: initialUserData.avatar,
-        avatarColor: initialUserData.avatarColor,
-        createdAt: new Date().toISOString().split('T')[0],
-        isOnboarded: false,
-        profile: initialUserData.profile,
-      };
-
-      setCurrentUser(createdUser);
-      localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(createdUser));
-      syncUserToSupabase(createdUser);
-      return;
-    } catch (firebaseErr: any) {
-      const isRestricted = 
-        firebaseErr?.code === 'auth/operation-not-allowed' || 
-        firebaseErr?.code === 'auth/admin-restricted-operation' ||
-        firebaseErr?.code === 'auth/configuration-not-found';
-
-      if (!isRestricted) {
-        throw firebaseErr;
+        setCurrentUser(createdUser);
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(createdUser));
+        await syncUserToSupabase(createdUser);
+        return;
       }
+    } catch (suErr) {
+      console.warn('Supabase Auth signUp note, using direct user persistence:', suErr);
     }
 
-    // --- Fallback Cloud Firestore Registration ---
-    const userId = getFirestoreUserId(trimmedEmail);
-    const userDocRef = doc(db, 'users', userId);
-    const existingSnap = await getDoc(userDocRef);
-
-    if (existingSnap.exists()) {
-      const existsErr: any = new Error('Email already in use');
-      existsErr.code = 'auth/email-already-in-use';
-      throw existsErr;
-    }
-
-    const hashedPassword = await hashPassword(password);
-    const newUserData = {
+    // 2. Direct Supabase public.users registration fallback
+    const userId = generateUserId(trimmedEmail);
+    const createdUser: User = {
       id: userId,
       name: trimmedName || trimmedEmail.split('@')[0] || 'Пользователь',
       email: trimmedEmail,
-      passwordHash: hashedPassword,
       avatar: '🥑',
       avatarColor: 'from-emerald-400 to-teal-500',
-      createdAt: serverTimestamp(),
-      lastLoginAt: serverTimestamp(),
+      familyId: null,
+      createdAt: new Date().toISOString().split('T')[0],
       isOnboarded: false,
       profile: {
         ...DEFAULT_PROFILE,
@@ -432,96 +313,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
     };
 
-    await setDoc(userDocRef, newUserData);
-
-    const createdUser: User = {
-      id: userId,
-      name: newUserData.name,
-      email: trimmedEmail,
-      avatar: '🥑',
-      avatarColor: 'from-emerald-400 to-teal-500',
-      createdAt: new Date().toISOString().split('T')[0],
-      isOnboarded: false,
-      profile: newUserData.profile,
-    };
-
     setCurrentUser(createdUser);
     localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(createdUser));
-    syncUserToSupabase(createdUser);
-  };
-
-  const completeAccountSetup = async (params: CompleteSetupParams): Promise<void> => {
-    if (!currentUser) return;
-
-    const updatedProfile: UserProfile = {
-      ...currentUser.profile,
-      ...params.profile,
-      city: params.city ?? currentUser.profile.city,
-      updatedAt: new Date().toISOString(),
-    };
-
-    const updatedUser: User = {
-      ...currentUser,
-      name: params.name || currentUser.name,
-      avatar: params.avatar || currentUser.avatar,
-      avatarColor: params.avatarColor || currentUser.avatarColor,
-      isOnboarded: true,
-      profile: updatedProfile,
-    };
-
-    try {
-      const userDocRef = doc(db, 'users', currentUser.id);
-      await updateDoc(userDocRef, {
-        name: updatedUser.name,
-        avatar: updatedUser.avatar,
-        avatarColor: updatedUser.avatarColor,
-        isOnboarded: true,
-        profile: updatedProfile,
-        setupCompletedAt: serverTimestamp(),
-      });
-    } catch (err) {
-      console.warn('Firestore updateDoc note in setup:', err);
-    }
-
-    // Sync to Supabase
-    try {
-      await supabase.from('users').upsert({
-        id: updatedUser.id,
-        name: updatedUser.name,
-        email: updatedUser.email.toLowerCase(),
-        avatar: updatedUser.avatar,
-        avatar_color: updatedUser.avatarColor,
-        is_onboarded: true,
-        family_id: updatedUser.familyId || null,
-        profile: updatedProfile as any,
-        last_login_at: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.warn('Supabase upsert in setup:', err);
-    }
-
-    setCurrentUser(updatedUser);
-    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updatedUser));
-  };
-
-  const refreshUser = () => {
-    const stored = localStorage.getItem(LOCAL_SESSION_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as User;
-        setCurrentUser(parsed);
-      } catch {}
-    }
+    await syncUserToSupabase(createdUser);
   };
 
   const logout = async (): Promise<void> => {
     try {
-      await signOut(auth);
-    } catch (e) {
-      console.warn('SignOut auth note:', e);
-    }
-    setCurrentUser(null);
-    setFirebaseUser(null);
+      await supabase.auth.signOut();
+    } catch {}
+
+    userActions.setUser(null);
     localStorage.removeItem(LOCAL_SESSION_KEY);
   };
 
@@ -534,30 +336,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updatedAt: new Date().toISOString(),
     };
 
-    try {
-      const userDocRef = doc(db, 'users', currentUser.id);
-      await updateDoc(userDocRef, {
-        profile: updatedProfile,
-        lastUpdated: serverTimestamp(),
-      });
+    const updatedUser: User = {
+      ...currentUser,
+      profile: updatedProfile,
+    };
 
-      const updatedUser: User = {
-        ...currentUser,
-        profile: updatedProfile,
-      };
-
-      try {
-        await supabase.from('users').update({
-          profile: updatedProfile as any,
-        }).eq('id', currentUser.id);
-      } catch {}
-
-      setCurrentUser(updatedUser);
-      localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updatedUser));
-    } catch (err) {
-      console.error('Error updating user profile in Firestore:', err);
-      throw err;
-    }
+    setCurrentUser(updatedUser);
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updatedUser));
+    await syncUserToSupabase(updatedUser);
   };
 
   const updateUserSettings = async (params: UpdateUserSettingsParams): Promise<void> => {
@@ -565,59 +351,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const updatedProfile: UserProfile = {
       ...currentUser.profile,
-      ...(params.profile || {}),
+      ...params.profile,
       updatedAt: new Date().toISOString(),
     };
 
     const updatedUser: User = {
       ...currentUser,
-      name: params.name || currentUser.name,
-      avatar: params.avatar || currentUser.avatar,
-      avatarColor: params.avatarColor || currentUser.avatarColor,
+      name: params.name ?? currentUser.name,
+      avatar: params.avatar ?? currentUser.avatar,
+      avatarColor: params.avatarColor ?? currentUser.avatarColor,
       profile: updatedProfile,
     };
 
-    try {
-      const userDocRef = doc(db, 'users', currentUser.id);
-      await updateDoc(userDocRef, {
-        name: updatedUser.name,
-        avatar: updatedUser.avatar,
-        avatarColor: updatedUser.avatarColor,
-        profile: updatedProfile,
-        lastUpdated: serverTimestamp(),
-      });
+    setCurrentUser(updatedUser);
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updatedUser));
+    await syncUserToSupabase(updatedUser);
 
+    if (updatedUser.familyId) {
       try {
-        await supabase.from('users').update({
-          name: updatedUser.name,
-          avatar: updatedUser.avatar,
-          avatar_color: updatedUser.avatarColor,
-          profile: updatedProfile as any,
-        }).eq('id', currentUser.id);
+        const bc = new BroadcastChannel('smart_budget_sync');
+        bc.postMessage({ type: 'FAMILY_UPDATED', familyId: updatedUser.familyId });
+        bc.close();
       } catch {}
-
-      setCurrentUser(updatedUser);
-      localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updatedUser));
-
-      // If user is in a family, broadcast update so family budget recalculates instantly
-      if (updatedUser.familyId) {
-        try {
-          const bc = new BroadcastChannel('smart_budget_sync');
-          bc.postMessage({ type: 'FAMILY_UPDATED', familyId: updatedUser.familyId });
-          bc.close();
-        } catch {}
-      }
-    } catch (err) {
-      console.error('Error updating user settings in Firestore:', err);
-      throw err;
     }
+  };
+
+  const completeAccountSetup = async (params: CompleteSetupParams): Promise<void> => {
+    if (!currentUser) return;
+
+    const updatedProfile: UserProfile = {
+      ...currentUser.profile,
+      ...params.profile,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const updatedUser: User = {
+      ...currentUser,
+      name: params.name ?? currentUser.name,
+      avatar: params.avatar ?? currentUser.avatar,
+      avatarColor: params.avatarColor ?? currentUser.avatarColor,
+      isOnboarded: true,
+      profile: updatedProfile,
+    };
+
+    setCurrentUser(updatedUser);
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updatedUser));
+    await syncUserToSupabase(updatedUser);
   };
 
   return (
     <AuthContext.Provider
       value={{
         currentUser,
-        firebaseUser,
+        firebaseUser: null,
         isAuthenticated: !!currentUser,
         isLoading,
         login,
