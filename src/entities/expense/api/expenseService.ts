@@ -132,8 +132,6 @@ function saveLocalExpenses(userId: string, expenses: Expense[]): void {
  * Fetches all personal expenses for a specific user from Supabase with local fallback
  */
 export async function fetchPersonalExpenses(userId: string): Promise<Expense[]> {
-  const supabaseResults: Expense[] = [];
-
   try {
     const { data, error } = await supabase
       .from('expenses')
@@ -141,29 +139,25 @@ export async function fetchPersonalExpenses(userId: string): Promise<Expense[]> 
       .eq('user_id', userId)
       .order('date', { ascending: false });
 
-    if (!error && data && data.length > 0) {
-      data.forEach((row) => {
-        supabaseResults.push({
-          id: row.id,
-          userId: row.user_id,
-          familyId: row.family_id,
-          amount: Number(row.amount),
-          category: row.category as ExpenseCategory,
-          storeId: row.store_id,
-          date: row.date,
-          title: row.title || 'Покупка продуктов',
-          receiptItems: (row.receipt_items as any) || [],
-          createdAt: row.created_at,
-        });
-      });
+    if (!error && data) {
+      const supabaseResults: Expense[] = data.map((row) => ({
+        id: row.id,
+        userId: row.user_id,
+        familyId: row.family_id,
+        amount: Number(row.amount),
+        category: row.category as ExpenseCategory,
+        storeId: row.store_id,
+        date: row.date,
+        title: row.title || 'Покупка продуктов',
+        receiptItems: (row.receipt_items as any) || [],
+        createdAt: row.created_at,
+      }));
+
+      saveLocalExpenses(userId, supabaseResults);
+      return supabaseResults;
     }
   } catch (err) {
     console.warn('Supabase fetch expenses note (using local cache):', err);
-  }
-
-  if (supabaseResults.length > 0) {
-    saveLocalExpenses(userId, supabaseResults);
-    return supabaseResults;
   }
 
   return getLocalExpenses(userId);
@@ -225,14 +219,35 @@ export async function createPersonalExpense(params: {
  */
 export async function deletePersonalExpense(expenseId: string, userId: string): Promise<void> {
   try {
-    await supabase.from('expenses').delete().eq('id', expenseId);
+    const { error } = await supabase.from('expenses').delete().eq('id', expenseId);
+    if (error) {
+      console.warn('Supabase delete expense error:', error);
+    }
   } catch (err) {
     console.warn('Supabase delete expense note:', err);
   }
 
+  // Always update personal cache
   const local = getLocalExpenses(userId);
   const updated = local.filter((e) => e.id !== expenseId);
   saveLocalExpenses(userId, updated);
+
+  // Also clean up all cached family expenses in localStorage
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(`${LOCAL_EXPENSES_KEY}_family_`)) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const list = JSON.parse(raw) as Expense[];
+          const filtered = list.filter(e => e.id !== expenseId);
+          localStorage.setItem(key, JSON.stringify(filtered));
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Error cleaning family cache on delete:', e);
+  }
 }
 
 /**
@@ -274,8 +289,6 @@ export function getLocalFamilyExpenses(familyId: string, memberIds: string[] = [
  * Fetches all family expenses from Supabase with fallback to member local caches
  */
 export async function fetchFamilyExpenses(familyId: string, memberIds: string[] = []): Promise<Expense[]> {
-  const supabaseResults: Expense[] = [];
-
   try {
     let query = supabase.from('expenses').select('*');
     if (memberIds.length > 0) {
@@ -286,44 +299,29 @@ export async function fetchFamilyExpenses(familyId: string, memberIds: string[] 
 
     const { data, error } = await query.order('date', { ascending: false });
 
-    if (!error && data && data.length > 0) {
-      data.forEach((row) => {
-        supabaseResults.push({
-          id: row.id,
-          userId: row.user_id,
-          familyId: row.family_id,
-          amount: Number(row.amount),
-          category: row.category as ExpenseCategory,
-          storeId: row.store_id,
-          date: row.date,
-          title: row.title || 'Покупка продуктов',
-          receiptItems: (row.receipt_items as any) || [],
-          createdAt: row.created_at,
-        });
-      });
+    if (!error && data) {
+      const supabaseResults: Expense[] = data.map((row) => ({
+        id: row.id,
+        userId: row.user_id,
+        familyId: row.family_id,
+        amount: Number(row.amount),
+        category: row.category as ExpenseCategory,
+        storeId: row.store_id,
+        date: row.date,
+        title: row.title || 'Покупка продуктов',
+        receiptItems: (row.receipt_items as any) || [],
+        createdAt: row.created_at,
+      }));
+
+      try {
+        localStorage.setItem(`${LOCAL_EXPENSES_KEY}_family_${familyId}`, JSON.stringify(supabaseResults));
+      } catch {}
+      return supabaseResults;
     }
   } catch (err) {
     console.warn('Supabase fetch family expenses note (using local cache):', err);
   }
 
-  // Merge with local offline family expenses without duplicate IDs
-  const localItems = getLocalFamilyExpenses(familyId, memberIds);
-  const seenIds = new Set(supabaseResults.map(e => e.id));
-  localItems.forEach(e => {
-    if (!seenIds.has(e.id)) {
-      seenIds.add(e.id);
-      supabaseResults.push(e);
-    }
-  });
-
-  supabaseResults.sort((a, b) => b.date.localeCompare(a.date));
-
-  if (supabaseResults.length > 0) {
-    try {
-      localStorage.setItem(`${LOCAL_EXPENSES_KEY}_family_${familyId}`, JSON.stringify(supabaseResults));
-    } catch {}
-    return supabaseResults;
-  }
-
-  return localItems;
+  // Fallback to local items only on network error
+  return getLocalFamilyExpenses(familyId, memberIds);
 }

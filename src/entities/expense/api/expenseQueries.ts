@@ -29,8 +29,11 @@ export function usePersonalExpensesQuery(userId?: string) {
       if (!userId) return [];
       return getLocalExpenses(userId);
     },
+    initialDataUpdatedAt: 0,
     enabled: !!userId,
-    staleTime: 1000 * 60 * 3, // 3 minutes cache
+    staleTime: 1000 * 5,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -48,8 +51,11 @@ export function useFamilyExpensesQuery(familyId?: string | null, memberIds: stri
       if (!familyId) return [];
       return getLocalFamilyExpenses(familyId, memberIds);
     },
+    initialDataUpdatedAt: 0,
     enabled: !!familyId,
-    staleTime: 1000 * 60 * 3, // 3 minutes cache
+    staleTime: 1000 * 5,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -72,7 +78,7 @@ export function useCreateExpenseMutation(userId: string) {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: expenseQueryKeys.personal(userId) });
+      queryClient.invalidateQueries({ queryKey: expenseQueryKeys.all });
     },
   });
 }
@@ -88,12 +94,7 @@ export function useDeleteExpenseMutation(userId: string, familyId?: string | nul
       return deletePersonalExpense(expenseId, userId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: expenseQueryKeys.personal(userId) });
-      if (familyId) {
-        queryClient.invalidateQueries({ queryKey: expenseQueryKeys.family(familyId) });
-      } else {
-        queryClient.invalidateQueries({ queryKey: expenseQueryKeys.all });
-      }
+      queryClient.invalidateQueries({ queryKey: expenseQueryKeys.all });
     },
   });
 }

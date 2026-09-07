@@ -363,10 +363,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const onFocus = () => {
       syncUserRemote();
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
     };
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         syncUserRemote();
+        queryClient.invalidateQueries({ queryKey: ['expenses'] });
       }
     };
 

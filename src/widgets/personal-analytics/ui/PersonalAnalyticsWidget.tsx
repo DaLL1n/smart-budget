@@ -37,7 +37,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
   filter,
 }) => {
   const { data: expenses = [], isLoading } = usePersonalExpensesQuery(currentUser.id);
-  const deleteMutation = useDeleteExpenseMutation(currentUser.id);
+  const deleteMutation = useDeleteExpenseMutation(currentUser.id, currentUser.familyId);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
   const [isDateTransitioning, setIsDateTransitioning] = useState(false);
