@@ -11,11 +11,15 @@ import { Chart } from '@tanstack/charts/react/tooltip';
 export interface DailyBarChartProps {
   items: DailyBarItem[];
   dailyLimit: number;
+  selectedDate?: string | null;
+  onSelectDate?: (date: string | null) => void;
 }
 
 export const DailyBarChart: React.FC<DailyBarChartProps> = ({
   items,
   dailyLimit,
+  selectedDate,
+  onSelectDate,
 }) => {
   if (items.length === 0) {
     return (
@@ -63,6 +67,16 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
     setPage(defaultPage);
   }, [defaultPage, pageSize]);
 
+  // Auto-scroll to selectedDate page if set
+  useEffect(() => {
+    if (selectedDate && isPaginated) {
+      const idx = items.findIndex(i => i.date === selectedDate);
+      if (idx !== -1) {
+        setPage(Math.floor(idx / pageSize));
+      }
+    }
+  }, [selectedDate, isPaginated, items, pageSize]);
+
   // Sliced items for the active window
   const visibleItems = useMemo(() => {
     if (!isPaginated) return items;
@@ -83,7 +97,15 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
         barY(visibleItems, {
           x: 'dayLabel',
           y: 'amount',
-          fill: (d) => (d.isOverLimit ? '#f43f5e' : '#10b981'),
+          fill: (d) => {
+            if (selectedDate && d.date === selectedDate) {
+              return '#10b981';
+            }
+            if (selectedDate && d.date !== selectedDate) {
+              return d.isOverLimit ? '#f43f5e55' : '#10b98155';
+            }
+            return d.isOverLimit ? '#f43f5e' : '#10b981';
+          },
           radius: 6,
           inset: 3,
           maxThickness: 36,
@@ -115,7 +137,7 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
       },
       tooltip,
     });
-  }, [visibleItems, dailyLimit, maxScale]);
+  }, [visibleItems, dailyLimit, maxScale, selectedDate]);
 
   return (
     <div className="w-full space-y-3">
@@ -176,6 +198,39 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
           }}
         />
       </div>
+
+      {/* Interactive Day Selection Chips for the Visible Window */}
+      {visibleItems.length > 0 && (
+        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-1">
+          {visibleItems.map((item) => {
+            const isSelected = selectedDate === item.date;
+            return (
+              <button
+                key={item.date}
+                type="button"
+                onClick={() => onSelectDate?.(isSelected ? null : item.date)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-mono whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                  isSelected
+                    ? 'bg-emerald-500 text-slate-950 font-bold shadow-md ring-2 ring-emerald-400'
+                    : item.amount > 0
+                    ? 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80'
+                    : 'bg-slate-950/40 hover:bg-slate-800/60 text-slate-400 border border-slate-800/60'
+                }`}
+                title={isSelected ? 'Снять выбор дня' : `Показать траты за ${item.dayLabel}`}
+              >
+                <span>{item.dayLabel}</span>
+                {item.amount > 0 ? (
+                  <span className={`font-semibold ${isSelected ? 'text-slate-950' : 'text-emerald-400'}`}>
+                    {formatRubles(item.amount)}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-500">0 ₽</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Pagination Controls for 3-Day Sliding Window */}
       {isPaginated && totalPages > 1 && (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, ChevronDown, X, Plus, Check, Loader2, Store, MapPin } from 'lucide-react';
+import { useDebouncedValue } from '@tanstack/react-pacer';
 import { StoreOption, fetchStoresForCity } from '../../../entities/store';
 
 interface StoreSelectorProps {
@@ -17,6 +18,8 @@ export const StoreSelector: React.FC<StoreSelectorProps> = ({
   const [availableStores, setAvailableStores] = useState<StoreOption[]>([]);
   const [isLoadingStores, setIsLoadingStores] = useState<boolean>(false);
   const [storeSearchQuery, setStoreSearchQuery] = useState<string>('');
+  // TanStack Pacer: smooth 150ms debouncing for instant search filtering and future AI store matchers
+  const [debouncedStoreSearchQuery] = useDebouncedValue(storeSearchQuery, { wait: 150 });
   const [isStoreSelectOpen, setIsStoreSelectOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -70,8 +73,8 @@ export const StoreSelector: React.FC<StoreSelectorProps> = ({
   };
 
   const filteredStores = availableStores.filter(store => {
-    if (!storeSearchQuery.trim()) return true;
-    const query = storeSearchQuery.toLowerCase().trim();
+    if (!debouncedStoreSearchQuery.trim()) return true;
+    const query = debouncedStoreSearchQuery.toLowerCase().trim();
     return (
       store.name.toLowerCase().includes(query) ||
       (store.category && store.category.toLowerCase().includes(query))

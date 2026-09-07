@@ -73,6 +73,30 @@ export const EditBudgetModal: React.FC<SettingsModalProps> = ({
   const [weeklyDigest, setWeeklyDigest] = useState<boolean>(currentUser.profile?.notificationSettings?.weeklyDigest ?? true);
   const [savingTips, setSavingTips] = useState<boolean>(currentUser.profile?.notificationSettings?.savingTips ?? true);
 
+  // Re-sync form state when modal opens or currentUser updates
+  useEffect(() => {
+    if (!isOpen) return;
+    setName(currentUser.name || '');
+    setAvatar(currentUser.avatar || '🥑');
+    setAvatarColor(currentUser.avatarColor || 'from-emerald-400 to-teal-500');
+    setCity(currentUser.profile?.city || 'Москва');
+    setNotes(currentUser.profile?.notes || '');
+    setMonthlyBudget(currentUser.profile?.monthlyBudget || 35000);
+    setBudgetAlertThreshold(currentUser.profile?.budgetAlertThreshold || 80);
+
+    const goals: BudgetGoalType[] = currentUser.profile?.budgetGoals?.length 
+      ? currentUser.profile.budgetGoals 
+      : currentUser.profile?.budgetGoal 
+      ? [currentUser.profile.budgetGoal] 
+      : ['smart_planning', 'save_money'];
+    setBudgetGoals(goals);
+    setDietaryPreferences(currentUser.profile?.dietaryPreferences || ['standard', 'healthy']);
+    setFavoriteStores(currentUser.profile?.favoriteStores || ['pyaterochka', 'vkusvill', 'samokat']);
+    setBudgetAlerts(currentUser.profile?.notificationSettings?.budgetAlerts ?? true);
+    setWeeklyDigest(currentUser.profile?.notificationSettings?.weeklyDigest ?? true);
+    setSavingTips(currentUser.profile?.notificationSettings?.savingTips ?? true);
+  }, [isOpen, currentUser]);
+
   // Lock body scroll when modal is open
   useEffect(() => {
     if (!isOpen) return;

@@ -80,7 +80,7 @@ export function useCreateExpenseMutation(userId: string) {
 /**
  * Hook to delete an expense with automatic cache invalidation
  */
-export function useDeleteExpenseMutation(userId: string) {
+export function useDeleteExpenseMutation(userId: string, familyId?: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -89,6 +89,11 @@ export function useDeleteExpenseMutation(userId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: expenseQueryKeys.personal(userId) });
+      if (familyId) {
+        queryClient.invalidateQueries({ queryKey: expenseQueryKeys.family(familyId) });
+      } else {
+        queryClient.invalidateQueries({ queryKey: expenseQueryKeys.all });
+      }
     },
   });
 }

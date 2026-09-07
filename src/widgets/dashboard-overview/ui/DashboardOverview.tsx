@@ -56,7 +56,7 @@ export const DashboardOverview: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto py-6 px-4 space-y-6">
+    <div className="w-full space-y-4 sm:space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="md:col-span-2 p-6 rounded-2xl bg-zinc-900/80 border border-zinc-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between space-y-5">
           <div className="flex items-start justify-between">

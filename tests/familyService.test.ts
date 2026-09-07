@@ -21,7 +21,8 @@ import {
   fetchFamily, 
   addFamilyMember, 
   leaveFamily, 
-  removeFamilyMember 
+  removeFamilyMember,
+  updateFamilyPreferences 
 } from '../src/entities/family';
 import { User } from '../src/entities/user';
 
@@ -128,11 +129,32 @@ async function runTests() {
   mockUserB.familyId = null;
   const family2 = await addFamilyMember(mockUserA, 'anna@family.ru');
   mockUserA.familyId = family2.id;
+
+  // Test 6: Синхронизация стратегий семьи через updateFamilyPreferences
+  const updatedFamilyWithGoals = await updateFamilyPreferences(family2.id, {
+    budgetGoals: ['eat_healthier', 'smart_planning', 'save_money', 'strict_budget'],
+    dietaryPreferences: ['standard', 'healthy', 'vegetarian'],
+  });
+  assert.ok(updatedFamilyWithGoals, 'Семья должна вернуться после обновления');
+  assert.strictEqual(updatedFamilyWithGoals.budgetGoals.length, 4, 'У семьи должно быть 4 обновленные стратегии');
+  assert.ok(updatedFamilyWithGoals.budgetGoals.includes('strict_budget'), 'Стратегия strict_budget должна присутствовать');
+  assert.ok(updatedFamilyWithGoals.dietaryPreferences.includes('vegetarian'), 'Диета vegetarian должна присутствовать');
+  console.log('[PASS 6/7] Синхронизация стратегий бюджета и предпочтений семьи');
+
+  // Test 7: Проверка повторного чтения семьи с актуальными стратегиями
+  const refetchedFamily = await fetchFamily(family2.id);
+  assert.ok(refetchedFamily, 'Семья должна успешно загружаться');
+  assert.deepStrictEqual(
+    refetchedFamily.budgetGoals, 
+    ['eat_healthier', 'smart_planning', 'save_money', 'strict_budget'],
+    'Сохраненные стратегии должны точно совпадать'
+  );
+  console.log('[PASS 7/7] Персистентность и согласованность стратегий семьи при повторной выборке');
+
   await leaveFamily(mockUserA);
   assert.strictEqual(mockUserA.familyId, null, 'После выхода familyId у пользователя должен быть null');
-  console.log('[PASS 5/5] Самостоятельный выход из семьи');
 
-  console.log('\n✅ РЕЗУЛЬТАТ FEATURE-TESTER: Все 5 сценариев упрощенного семейного доступа успешно пройдены!');
+  console.log('\n✅ РЕЗУЛЬТАТ FEATURE-TESTER: Все 7 сценариев семейного доступа и синхронизации стратегий успешно пройдены!');
 }
 
 runTests().catch(err => {

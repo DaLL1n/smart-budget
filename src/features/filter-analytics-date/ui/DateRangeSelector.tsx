@@ -13,8 +13,8 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
   onChange,
 }) => {
   const periods: { id: DatePeriod; label: string }[] = [
-    { id: 'today', label: 'Сегодня' },
     { id: 'yesterday', label: 'Вчера' },
+    { id: 'today', label: 'Сегодня' },
     { id: '7days', label: '7 дней' },
     { id: 'month', label: 'Текущий месяц' },
   ];
@@ -94,6 +94,7 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
           onClick={() => shiftCustomDay(-1)}
           className="p-1.5 rounded-xl bg-slate-950/70 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition-colors cursor-pointer"
           title="Предыдущий день"
+          aria-label="Предыдущий день"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -103,17 +104,26 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
             const input = document.getElementById('analytics-date-picker-input') as HTMLInputElement;
             try {
               input?.showPicker?.();
-            } catch {}
+            } catch {
+              input?.focus?.();
+            }
           }}
-          className="relative inline-flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer group"
+          className="relative inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer group shrink-0"
+          title="Выбрать дату"
         >
-          <Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <Calendar className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
           <input
             id="analytics-date-picker-input"
             type="date"
             value={currentDateValue}
             onChange={(e) => handleCustomDateChange(e.target.value)}
-            className="w-auto bg-transparent border-0 text-slate-100 text-xs font-mono p-0 focus:outline-none cursor-pointer"
+            onClick={(e) => {
+              try {
+                e.currentTarget.showPicker?.();
+              } catch {}
+            }}
+            aria-label="Выберите дату для аналитики"
+            className="w-[88px] min-w-[88px] max-w-[88px] bg-transparent border-0 text-slate-100 text-xs font-mono p-0 m-0 focus:outline-none cursor-pointer appearance-none shrink-0 whitespace-nowrap"
           />
         </div>
 
@@ -122,6 +132,7 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
           onClick={() => shiftCustomDay(1)}
           className="p-1.5 rounded-xl bg-slate-950/70 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition-colors cursor-pointer"
           title="Следующий день"
+          aria-label="Следующий день"
         >
           <ChevronRight className="w-4 h-4" />
         </button>

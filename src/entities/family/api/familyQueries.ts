@@ -1,11 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { User } from '../../user';
+import { BudgetGoalType } from '../../budget';
 import { Family, AddFamilyMemberInput } from '../model/schema';
 import { 
   fetchFamily, 
   addFamilyMember, 
   leaveFamily, 
-  removeFamilyMember 
+  removeFamilyMember,
+  updateFamilyPreferences 
 } from './familyService';
 
 export const familyKeys = {
@@ -91,6 +93,36 @@ export function useRemoveFamilyMemberMutation(currentUser: User | null) {
     onSuccess: (updatedFamily) => {
       queryClient.invalidateQueries({ queryKey: familyKeys.all });
       queryClient.invalidateQueries({ queryKey: ['user'] });
+      if (updatedFamily) {
+        queryClient.setQueryData(familyKeys.detail(updatedFamily.id), updatedFamily);
+      }
+    },
+    networkMode: 'offlineFirst',
+  });
+}
+
+/**
+ * Mutation to update family shared preferences (budget goals, dietary preferences, monthly budget)
+ */
+export function useUpdateFamilyPreferencesMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      familyId,
+      preferences,
+    }: {
+      familyId: string;
+      preferences: {
+        budgetGoals?: BudgetGoalType[];
+        dietaryPreferences?: string[];
+        monthlyBudget?: number;
+      };
+    }) => {
+      return await updateFamilyPreferences(familyId, preferences);
+    },
+    onSuccess: (updatedFamily) => {
+      queryClient.invalidateQueries({ queryKey: familyKeys.all });
       if (updatedFamily) {
         queryClient.setQueryData(familyKeys.detail(updatedFamily.id), updatedFamily);
       }

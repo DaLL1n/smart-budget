@@ -1,7 +1,8 @@
 import { supabase } from '../../../shared/api';
 import { User, userActions } from '../../user';
+import { BudgetGoalType } from '../../budget';
 import { Family, FamilyMember, addFamilyMemberInputSchema } from '../model/schema';
-import { familyActions } from '../model/familyStore';
+import { familyActions, familyStore } from '../model/familyStore';
 
 const LOCAL_FAMILY_PREFIX = 'smart_budget_family_';
 const LOCAL_SESSION_KEY = 'food_budget_cloud_user';
@@ -129,6 +130,53 @@ export async function fetchFamily(familyId: string): Promise<Family | null> {
       });
     }
   }
+
+  // Calculate real monthly spent for each member in current month
+  const currentMonthPrefix = new Date().toISOString().substring(0, 7);
+  const spentByMember = new Map<string, number>();
+
+  try {
+    let q = supabase.from('expenses').select('user_id, amount, date');
+    if (memberIds.length > 0) {
+      q = q.or(`family_id.eq.${familyId},user_id.in.(${memberIds.join(',')})`);
+    } else {
+      q = q.eq('family_id', familyId);
+    }
+    const { data: expRows } = await q;
+    if (expRows) {
+      expRows.forEach((row: any) => {
+        if (row.date && row.date.startsWith(currentMonthPrefix)) {
+          const uid = row.user_id;
+          const prev = spentByMember.get(uid) || 0;
+          spentByMember.set(uid, prev + Number(row.amount || 0));
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('Could not load member expenses from Supabase:', err);
+  }
+
+  // Check local offline expenses as fallback/addition
+  try {
+    memberIds.forEach(uid => {
+      const raw = localStorage.getItem(`smart_budget_personal_expenses_v1_${uid}`);
+      if (raw) {
+        const list = JSON.parse(raw);
+        list.forEach((e: any) => {
+          if (e.date && e.date.startsWith(currentMonthPrefix)) {
+            if (!spentByMember.has(uid)) {
+              spentByMember.set(uid, (spentByMember.get(uid) || 0) + Number(e.amount || 0));
+            }
+          }
+        });
+      }
+    });
+  } catch {}
+
+  // Assign computed monthlySpent to each member
+  loadedMembers.forEach(m => {
+    m.monthlySpent = spentByMember.get(m.userId) || 0;
+  });
 
   // Calculate total monthly budget dynamically as the sum of all members' individual budgets
   const sumMembersBudget = loadedMembers.reduce((acc, m) => acc + (m.monthlyBudget || 35000), 0);
@@ -540,4 +588,84 @@ export async function removeFamilyMember(currentUser: User, memberUserId: string
   const updatedFamily = await fetchFamily(familyId);
   broadcastFamilyUpdate('FAMILY_UPDATED', { familyId });
   return updatedFamily;
+}
+
+/**
+ * Updates family shared preferences (budget goals, dietary preferences, monthly budget)
+ * and synchronizes across Supabase, LocalStorage, TanStack Store, and BroadcastChannel.
+ */
+export async function updateFamilyPreferences(
+  familyId: string,
+  preferences: {
+    budgetGoals?: BudgetGoalType[];
+    dietaryPreferences?: string[];
+    monthlyBudget?: number;
+  }
+): Promise<Family | null> {
+  if (!familyId) return null;
+
+  const nowIso = new Date().toISOString();
+  const updatePayload: any = {
+    updated_at: nowIso,
+  };
+  if (preferences.budgetGoals) {
+    updatePayload.budget_goals = preferences.budgetGoals;
+  }
+  if (preferences.dietaryPreferences) {
+    updatePayload.dietary_preferences = preferences.dietaryPreferences;
+  }
+  if (preferences.monthlyBudget !== undefined) {
+    updatePayload.monthly_budget = preferences.monthlyBudget;
+  }
+
+  // 1. Update in Supabase
+  try {
+    await supabase
+      .from('families')
+      .update(updatePayload)
+      .eq('id', familyId);
+  } catch (err) {
+    console.warn('Supabase update family preferences error:', err);
+  }
+
+  // 2. Update local storage cache
+  const cacheKey = `${LOCAL_FAMILY_PREFIX}${familyId}`;
+  let currentCache: any = null;
+  try {
+    const raw = localStorage.getItem(cacheKey);
+    if (raw) currentCache = JSON.parse(raw);
+  } catch {}
+
+  if (currentCache) {
+    const updatedCache = {
+      ...currentCache,
+      ...(preferences.budgetGoals ? { budgetGoals: preferences.budgetGoals } : {}),
+      ...(preferences.dietaryPreferences ? { dietaryPreferences: preferences.dietaryPreferences } : {}),
+      ...(preferences.monthlyBudget !== undefined ? { monthlyBudget: preferences.monthlyBudget } : {}),
+      updatedAt: nowIso,
+    };
+    localStorage.setItem(cacheKey, JSON.stringify(updatedCache));
+  }
+
+  // 3. Update TanStack Store immediately
+  const storeFam = familyStore.state.currentFamily;
+  if (storeFam && storeFam.id === familyId) {
+    familyActions.setFamily({
+      ...storeFam,
+      ...(preferences.budgetGoals ? { budgetGoals: preferences.budgetGoals } : {}),
+      ...(preferences.dietaryPreferences ? { dietaryPreferences: preferences.dietaryPreferences } : {}),
+      ...(preferences.monthlyBudget !== undefined ? { monthlyBudget: preferences.monthlyBudget } : {}),
+      updatedAt: nowIso,
+    });
+  }
+
+  // 4. Broadcast update across tabs/windows
+  broadcastFamilyUpdate('FAMILY_UPDATED', { familyId });
+
+  // 5. Hydrate fresh enriched family data
+  const enriched = await fetchFamily(familyId);
+  if (enriched) {
+    familyActions.setFamily(enriched);
+  }
+  return enriched;
 }

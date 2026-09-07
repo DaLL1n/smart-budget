@@ -100,6 +100,17 @@ export const FamilyMemberList: React.FC<FamilyMemberListProps> = ({
             Участники семьи
           </h3>
         </div>
+
+        <button
+          type="button"
+          onClick={openLeaveModal}
+          disabled={isLeaving}
+          className="px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-rose-950/40 text-slate-400 hover:text-rose-300 border border-slate-800 hover:border-rose-900/50 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+          title="Выйти из этого семейного пространства"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Выйти из семьи</span>
+        </button>
       </div>
 
       {error && (

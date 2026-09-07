@@ -19,9 +19,30 @@ import { QueryErrorBoundary } from '../../../features/error-fallback';
 
 export type AnalyticsMode = 'personal' | 'family';
 
+const ANALYTICS_MODE_STORAGE_KEY = 'smart_budget_analytics_mode';
+
 export const AnalyticsPage: React.FC = () => {
   const { currentUser } = useAuth();
-  const [activeMode, setActiveMode] = useState<AnalyticsMode>('personal');
+  
+  const [activeMode, setActiveModeState] = useState<AnalyticsMode>(() => {
+    try {
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        const saved = localStorage.getItem(ANALYTICS_MODE_STORAGE_KEY);
+        if (saved === 'personal' || saved === 'family') {
+          return saved;
+        }
+      }
+    } catch {}
+    return 'personal';
+  });
+
+  const setActiveMode = (mode: AnalyticsMode) => {
+    setActiveModeState(mode);
+    try {
+      localStorage.setItem(ANALYTICS_MODE_STORAGE_KEY, mode);
+    } catch {}
+  };
+
   const [filterState, setFilterState] = useState<DateFilterState>({ period: 'month' });
 
   const storeFamily = useStore(familyStore, (s) => s.currentFamily);
@@ -31,10 +52,10 @@ export const AnalyticsPage: React.FC = () => {
   if (!currentUser) return null;
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto py-6 px-4 space-y-6">
+    <div className="w-full space-y-4 sm:space-y-6">
       
       {/* Top Header & Sub-section Switcher */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/90 border border-slate-800/80 backdrop-blur-xl shadow-xl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3.5 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800/80 backdrop-blur-xl shadow-xl">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-xl text-black font-bold shadow-md shadow-emerald-950/40">
             <BarChart3 className="w-5 h-5 text-black" />
@@ -69,7 +90,7 @@ export const AnalyticsPage: React.FC = () => {
             )}
             <span className="relative z-10 flex items-center gap-1.5">
               <UserIcon className="w-3.5 h-3.5" />
-              <span>Личные траты</span>
+              <span>Мой бюджет</span>
             </span>
           </button>
 
@@ -95,7 +116,7 @@ export const AnalyticsPage: React.FC = () => {
             )}
             <span className="relative z-10 flex items-center gap-1.5">
               <Users className="w-3.5 h-3.5" />
-              <span>Траты семьи</span>
+              <span>Семейный бюджет</span>
             </span>
           </button>
         </div>

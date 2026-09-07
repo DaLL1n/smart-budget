@@ -105,15 +105,19 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
   };
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     };
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, [isOpen]);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -138,7 +142,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
       {isOpen && (
         <div 
           id="notification-popover"
-          className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-slate-900 border border-slate-800/90 shadow-2xl shadow-black/80 backdrop-blur-2xl z-50 overflow-hidden flex flex-col max-h-[480px]"
+          className="fixed left-3 right-3 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 w-auto rounded-2xl bg-slate-900/95 border border-slate-800/90 shadow-2xl shadow-black/80 backdrop-blur-2xl z-50 overflow-hidden flex flex-col max-h-[calc(100vh-5rem)] sm:max-h-[480px]"
         >
           {/* Header */}
           <div className="p-3.5 border-b border-slate-800/80 bg-slate-950/40 flex items-center justify-between">

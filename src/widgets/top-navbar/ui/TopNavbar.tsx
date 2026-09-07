@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'motion/react';
+import { motion, LayoutGroup } from 'motion/react';
 import { 
   LayoutDashboard, 
   Users, 
@@ -73,45 +73,47 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           </div>
         </div>
 
-        {/* Center Navigation Tabs (Desktop: sm and up) */}
-        <nav className="hidden sm:flex items-center gap-1 sm:gap-1.5 bg-slate-950/60 p-1 rounded-xl border border-slate-800/80 shrink-0">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onTabChange(item.id)}
-                className={`relative inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer leading-none ${
-                  isActive
-                    ? 'text-emerald-300'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
-                }`}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeNavTabIndicatorDesktop"
-                    className="absolute inset-0 rounded-lg bg-emerald-500/15 border border-emerald-500/40 shadow-sm"
-                    transition={{
-                      type: 'spring',
-                      stiffness: 500,
-                      damping: 35
-                    }}
-                  />
-                )}
-
-                <span className="relative z-10 inline-flex items-center gap-1.5 leading-none">
-                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
-                  <span className="whitespace-nowrap leading-none">{item.label}</span>
-                  {item.badge && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 self-center mt-[2px]" />
+        {/* Desktop Navigation Links */}
+        <LayoutGroup id="topNavDesktop">
+          <nav className="hidden sm:flex items-center gap-1 bg-slate-950/70 p-1 rounded-xl border border-slate-800/80">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onTabChange(item.id)}
+                  className={`relative inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer leading-none ${
+                    isActive
+                      ? 'text-emerald-300'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeNavTabIndicatorDesktop"
+                      className="absolute inset-0 rounded-lg bg-emerald-500/15 border border-emerald-500/40 shadow-sm"
+                      transition={{
+                        type: 'spring',
+                        stiffness: 500,
+                        damping: 35
+                      }}
+                    />
                   )}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
+
+                  <span className="relative z-10 inline-flex items-center gap-1.5 leading-none">
+                    <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+                    <span className="whitespace-nowrap leading-none">{item.label}</span>
+                    {item.badge && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 self-center mt-[2px]" />
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+        </LayoutGroup>
 
         {/* Right Actions: Notification Bell + Settings + Logout */}
         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -147,44 +149,46 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
       {/* Mobile Navigation Sub-Bar with Full Page Names under Header */}
       <div className="sm:hidden px-3 pb-2.5 pt-0.5">
-        <nav className="flex items-center justify-between gap-1 bg-slate-950/70 p-1 rounded-xl border border-slate-800/80 w-full">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onTabChange(item.id)}
-                className={`relative flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer leading-none ${
-                  isActive
-                    ? 'text-emerald-300'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeNavTabIndicatorMobile"
-                    className="absolute inset-0 rounded-lg bg-emerald-500/15 border border-emerald-500/40 shadow-sm"
-                    transition={{
-                      type: 'spring',
-                      stiffness: 500,
-                      damping: 35
-                    }}
-                  />
-                )}
-
-                <span className="relative z-10 inline-flex items-center gap-1.5 leading-none">
-                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
-                  <span className="whitespace-nowrap leading-none">{item.label}</span>
-                  {item.badge && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 self-center mt-[2px]" />
+        <LayoutGroup id="topNavMobile">
+          <nav className="flex items-center justify-between gap-1 bg-slate-950/70 p-1 rounded-xl border border-slate-800/80 w-full">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onTabChange(item.id)}
+                  className={`relative flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer leading-none ${
+                    isActive
+                      ? 'text-emerald-300'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeNavTabIndicatorMobile"
+                      className="absolute inset-0 rounded-lg bg-emerald-500/15 border border-emerald-500/40 shadow-sm"
+                      transition={{
+                        type: 'spring',
+                        stiffness: 500,
+                        damping: 35
+                      }}
+                    />
                   )}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
+
+                  <span className="relative z-10 inline-flex items-center gap-1.5 leading-none">
+                    <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+                    <span className="whitespace-nowrap leading-none">{item.label}</span>
+                    {item.badge && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 self-center mt-[2px]" />
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+        </LayoutGroup>
       </div>
     </header>
   );

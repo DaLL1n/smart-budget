@@ -61,6 +61,26 @@ export function formatDayWeekday(dateStr: string): string {
 }
 
 /**
+ * Format ISO date string (YYYY-MM-DD) to compact date with short month and year (e.g. "2 сен 2026")
+ */
+export function formatShortDayMonthYear(dateStr: string): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length < 3) return dateStr;
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10);
+  const day = parseInt(parts[2], 10);
+  if (isNaN(year) || isNaN(month) || isNaN(day) || month < 1 || month > 12) return dateStr;
+
+  const shortMonths = [
+    'янв', 'фев', 'мар', 'апр', 'мая', 'июн',
+    'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'
+  ];
+
+  return `${day} ${shortMonths[month - 1]} ${year}`;
+}
+
+/**
  * Format ISO date string (YYYY-MM-DD) to compact short date (e.g. "1 сен")
  */
 export function formatShortDay(dateStr: string): string {

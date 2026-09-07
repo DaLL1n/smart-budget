@@ -277,11 +277,14 @@ export async function fetchFamilyExpenses(familyId: string, memberIds: string[] 
   const supabaseResults: Expense[] = [];
 
   try {
-    const { data, error } = await supabase
-      .from('expenses')
-      .select('*')
-      .eq('family_id', familyId)
-      .order('date', { ascending: false });
+    let query = supabase.from('expenses').select('*');
+    if (memberIds.length > 0) {
+      query = query.or(`family_id.eq.${familyId},user_id.in.(${memberIds.join(',')})`);
+    } else {
+      query = query.eq('family_id', familyId);
+    }
+
+    const { data, error } = await query.order('date', { ascending: false });
 
     if (!error && data && data.length > 0) {
       data.forEach((row) => {
@@ -303,6 +306,18 @@ export async function fetchFamilyExpenses(familyId: string, memberIds: string[] 
     console.warn('Supabase fetch family expenses note (using local cache):', err);
   }
 
+  // Merge with local offline family expenses without duplicate IDs
+  const localItems = getLocalFamilyExpenses(familyId, memberIds);
+  const seenIds = new Set(supabaseResults.map(e => e.id));
+  localItems.forEach(e => {
+    if (!seenIds.has(e.id)) {
+      seenIds.add(e.id);
+      supabaseResults.push(e);
+    }
+  });
+
+  supabaseResults.sort((a, b) => b.date.localeCompare(a.date));
+
   if (supabaseResults.length > 0) {
     try {
       localStorage.setItem(`${LOCAL_EXPENSES_KEY}_family_${familyId}`, JSON.stringify(supabaseResults));
@@ -310,5 +325,5 @@ export async function fetchFamilyExpenses(familyId: string, memberIds: string[] 
     return supabaseResults;
   }
 
-  return getLocalFamilyExpenses(familyId, memberIds);
+  return localItems;
 }

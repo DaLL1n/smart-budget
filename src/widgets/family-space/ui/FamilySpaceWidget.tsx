@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, 
   Wallet, 
@@ -13,20 +13,57 @@ import {
 } from 'lucide-react';
 import { useStore } from '@tanstack/react-store';
 import { useAuth } from '../../../entities/user';
-import { useFamilyQuery, familyStore } from '../../../entities/family';
+import { useFamilyQuery, familyStore, familyActions } from '../../../entities/family';
+import { useFamilyExpensesQuery, formatDateIso } from '../../../entities/expense';
 import { formatRubles, BUDGET_GOALS, DIETARY_OPTIONS } from '../../../entities/budget';
 import { POPULAR_STORES } from '../../../entities/store';
 import { AddFamilyMemberForm } from '../../../features/add-family-member';
-import { FamilyMemberList, LeaveFamilyButton } from '../../../features/manage-family-membership';
+import { FamilyMemberList } from '../../../features/manage-family-membership';
 
 export const FamilySpaceWidget: React.FC = () => {
   const { currentUser, refreshUser, isLoading: isAuthLoading } = useAuth();
   const storeFamily = useStore(familyStore, (s) => s.currentFamily);
   const { data: queryFamily, isLoading: isQueryLoading, refetch, isFetching } = useFamilyQuery(currentUser?.familyId);
 
-  const family = currentUser?.familyId ? (storeFamily || queryFamily) : null;
+  // Prioritize live fresh query data over cached store, falling back gracefully
+  const family = currentUser?.familyId ? (queryFamily || storeFamily) : null;
 
-  // Listen for cross-component and cross-tab updates (e.g., when member modifies monthly budget)
+  // Query live family expenses for all members
+  const memberIds = useMemo(() => family?.members?.map(m => m.userId) || [], [family?.members]);
+  const { data: familyExpenses = [] } = useFamilyExpensesQuery(family?.id, memberIds);
+
+  const currentYearMonth = useMemo(() => formatDateIso(new Date()).substring(0, 7), []);
+
+  // Enrich members with live calculated monthly expenses from current month
+  const displayFamily = useMemo(() => {
+    if (!family) return null;
+    const currentMonthExpenses = familyExpenses.filter(e => e.date.startsWith(currentYearMonth));
+
+    const enrichedMembers = family.members.map(member => {
+      const userMonthExpenses = currentMonthExpenses.filter(e => e.userId === member.userId);
+      const computedSpent = userMonthExpenses.reduce((sum, e) => sum + e.amount, 0);
+      const spent = familyExpenses.length > 0 ? computedSpent : (member.monthlySpent || 0);
+
+      return {
+        ...member,
+        monthlySpent: spent,
+      };
+    });
+
+    return {
+      ...family,
+      members: enrichedMembers,
+    };
+  }, [family, familyExpenses, currentYearMonth]);
+
+  // Keep familyStore in sync whenever query returns fresh data
+  useEffect(() => {
+    if (queryFamily) {
+      familyActions.setFamily(queryFamily);
+    }
+  }, [queryFamily]);
+
+  // Listen for cross-component and cross-tab updates (e.g., when member modifies monthly budget or strategy)
   useEffect(() => {
     let bc: BroadcastChannel | null = null;
     try {
@@ -127,20 +164,29 @@ export const FamilySpaceWidget: React.FC = () => {
   }
 
   // --- 2. ACTIVE FAMILY VIEW ---
-  const totalFamilySpent = family.members.reduce((acc, m) => acc + (m.monthlySpent || 0), 0);
-  const monthlyBudget = family.monthlyBudget || 60000;
+  const activeFamily = displayFamily || family;
+  const totalFamilySpent = activeFamily.members.reduce((acc, m) => acc + (m.monthlySpent || 0), 0);
+  const monthlyBudget = activeFamily.monthlyBudget || 60000;
   const remainingBudget = Math.max(0, monthlyBudget - totalFamilySpent);
   const percentUsed = Math.min(100, Math.round((totalFamilySpent / monthlyBudget) * 100));
 
-  const familyGoals = BUDGET_GOALS.filter(g => family.budgetGoals?.includes(g.id as any));
-  const familyDiets = DIETARY_OPTIONS.filter(d => family.dietaryPreferences?.includes(d.id));
+  const familyGoalsList = (activeFamily.budgetGoals && activeFamily.budgetGoals.length > 0)
+    ? activeFamily.budgetGoals
+    : (currentUser?.profile?.budgetGoals || ['save_money', 'smart_planning']);
+  const familyGoals = BUDGET_GOALS.filter(g => familyGoalsList.includes(g.id as any));
+
+  const familyDietsList = (activeFamily.dietaryPreferences && activeFamily.dietaryPreferences.length > 0)
+    ? activeFamily.dietaryPreferences
+    : (currentUser?.profile?.dietaryPreferences || ['standard']);
+  const familyDiets = DIETARY_OPTIONS.filter(d => familyDietsList.includes(d.id));
+
   const familyStores = POPULAR_STORES.filter(s => currentUser?.profile?.favoriteStores?.includes(s.id));
 
   return (
-    <div className="w-full max-w-[1440px] mx-auto space-y-6 animate-in fade-in duration-300">
+    <div className="w-full space-y-4 sm:space-y-6 animate-in fade-in duration-300">
       
       {/* Header Banner Card */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800/80 shadow-2xl relative overflow-hidden">
+      <div className="p-4 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800/80 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
@@ -156,7 +202,7 @@ export const FamilySpaceWidget: React.FC = () => {
               Семейное пространство
             </h1>
             <p className="text-xs text-slate-400">
-              <span>{family.members.length} {family.members.length === 1 ? 'участник' : family.members.length < 5 ? 'участника' : 'участников'}</span>
+              <span>{activeFamily.members.length} {activeFamily.members.length === 1 ? 'участник' : activeFamily.members.length < 5 ? 'участника' : 'участников'}</span>
             </p>
           </div>
 
@@ -172,16 +218,6 @@ export const FamilySpaceWidget: React.FC = () => {
               <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin text-emerald-400' : ''}`} />
               <span className="hidden sm:inline">Обновить</span>
             </button>
-
-            <LeaveFamilyButton
-              currentUser={currentUser}
-              family={family}
-              onFamilyUpdated={(updatedFamily) => {
-                familyStore.setState((s) => ({ ...s, currentFamily: updatedFamily }));
-                refreshUser();
-                refetch();
-              }}
-            />
           </div>
         </div>
 
@@ -234,7 +270,7 @@ export const FamilySpaceWidget: React.FC = () => {
         <div className="lg:col-span-7 space-y-6">
           <FamilyMemberList 
             currentUser={currentUser} 
-            family={family}
+            family={activeFamily}
             onFamilyUpdated={(updatedFamily) => {
               familyStore.setState((s) => ({ ...s, currentFamily: updatedFamily }));
               refreshUser();
@@ -253,7 +289,7 @@ export const FamilySpaceWidget: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              {family.members.map((member) => {
+              {activeFamily.members.map((member) => {
                 const memberSpent = member.monthlySpent || 0;
                 const memberPercent = totalFamilySpent > 0 ? Math.round((memberSpent / totalFamilySpent) * 100) : 0;
 

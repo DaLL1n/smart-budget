@@ -5,6 +5,7 @@ import { hashPassword, generateUserId } from '../../../shared/lib';
 import { User, UserProfile, CompleteSetupParams, UpdateUserSettingsParams } from './types';
 import { DEFAULT_PROFILE } from './constants';
 import { userStore, userActions, LOCAL_SESSION_KEY } from './userStore';
+import { updateFamilyPreferences } from '../../family/api/familyService';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -344,6 +345,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(updatedUser);
     localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updatedUser));
     await syncUserToSupabase(updatedUser);
+
+    if (updatedUser.familyId && (updates.budgetGoals || updates.dietaryPreferences)) {
+      await updateFamilyPreferences(updatedUser.familyId, {
+        budgetGoals: updates.budgetGoals,
+        dietaryPreferences: updates.dietaryPreferences,
+      });
+      try {
+        const bc = new BroadcastChannel('smart_budget_sync');
+        bc.postMessage({ type: 'FAMILY_UPDATED', familyId: updatedUser.familyId });
+        bc.close();
+      } catch {}
+    }
   };
 
   const updateUserSettings = async (params: UpdateUserSettingsParams): Promise<void> => {
@@ -368,6 +381,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await syncUserToSupabase(updatedUser);
 
     if (updatedUser.familyId) {
+      if (params.profile?.budgetGoals || params.profile?.dietaryPreferences) {
+        await updateFamilyPreferences(updatedUser.familyId, {
+          budgetGoals: params.profile.budgetGoals,
+          dietaryPreferences: params.profile.dietaryPreferences,
+        });
+      }
       try {
         const bc = new BroadcastChannel('smart_budget_sync');
         bc.postMessage({ type: 'FAMILY_UPDATED', familyId: updatedUser.familyId });
@@ -397,6 +416,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(updatedUser);
     localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updatedUser));
     await syncUserToSupabase(updatedUser);
+
+    if (updatedUser.familyId && (params.profile?.budgetGoals || params.profile?.dietaryPreferences)) {
+      await updateFamilyPreferences(updatedUser.familyId, {
+        budgetGoals: params.profile.budgetGoals,
+        dietaryPreferences: params.profile.dietaryPreferences,
+      });
+      try {
+        const bc = new BroadcastChannel('smart_budget_sync');
+        bc.postMessage({ type: 'FAMILY_UPDATED', familyId: updatedUser.familyId });
+        bc.close();
+      } catch {}
+    }
   };
 
   return (
