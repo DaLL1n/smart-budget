@@ -318,24 +318,19 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
   return (
     <div className={`p-3.5 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-xl space-y-4 ${className}`}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2 flex-wrap min-w-0">
+      <div className="flex items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2 min-w-0">
           <Receipt className="w-4 h-4 text-emerald-400 shrink-0" />
-          <h3 className="text-sm font-bold text-slate-100">
+          <h3 className="text-sm font-bold text-slate-100 truncate">
             {showDeleted ? 'Удаленные товары' : 'История покупок'}
           </h3>
-          {showDeleted && (
-            <span className="px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-300 border border-rose-500/30 text-[10px] font-mono">
-              Корзина
-            </span>
-          )}
         </div>
 
         {/* Toggle "Удаленные товары" button */}
         <button
           type="button"
           onClick={() => setShowDeleted(prev => !prev)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border shrink-0 ${
+          className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border shrink-0 ${
             showDeleted
               ? 'bg-rose-500/20 text-rose-200 border-rose-500/40 shadow-sm shadow-rose-950/40 ring-1 ring-rose-500/30 font-semibold'
               : 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white border-slate-700/70'
@@ -343,7 +338,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
           title={showDeleted ? 'Вернуться к не удаленным товарам' : 'Показать удаленные товары'}
         >
           <Trash2 className={`w-3.5 h-3.5 shrink-0 ${showDeleted ? 'text-rose-300' : 'text-slate-400'}`} />
-          <span>Удаленные товары</span>
+          <span className="whitespace-nowrap">Удаленные товары</span>
           {deletedList.length > 0 && (
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
