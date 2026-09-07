@@ -468,7 +468,8 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
             </div>
 
             <p className="text-xs text-slate-400 text-center leading-relaxed">
-              Вы уверены, что хотите удалить эту покупку? Действие нельзя отменить.
+              <span className="block">Вы уверены, что хотите удалить эту покупку?</span>
+              <span className="block text-slate-500">Действие нельзя отменить.</span>
             </p>
 
             {/* Buttons */}
