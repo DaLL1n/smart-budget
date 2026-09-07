@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { useStore } from '@tanstack/react-store';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../shared/api';
 import { hashPassword, generateUserId } from '../../../shared/lib';
 import { User, UserProfile, CompleteSetupParams, UpdateUserSettingsParams } from './types';
 import { DEFAULT_PROFILE } from './constants';
 import { userStore, userActions, LOCAL_SESSION_KEY } from './userStore';
-import { updateFamilyPreferences } from '../../family/api/familyService';
+import { familyKeys } from '../../family/api/familyQueries';
+import { fetchFamily, updateFamilyPreferences } from '../../family/api/familyService';
+import { familyActions } from '../../family/model/familyStore';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -46,6 +49,7 @@ async function syncUserToSupabase(user: User) {
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const queryClient = useQueryClient();
   const currentUser = useStore(userStore, (state) => state.currentUser);
   const isLoading = useStore(userStore, (state) => state.isLoading);
 
@@ -177,6 +181,216 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, []);
+
+  // Realtime Supabase synchronization & fallback polling for family membership, users, and expenses
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    let isMounted = true;
+    const currentUserId = currentUser.id;
+
+    // Helper to refresh and compare user state from Supabase
+    const syncUserRemote = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, name, email, avatar, avatar_color, family_id, is_onboarded, profile')
+          .eq('id', currentUserId)
+          .maybeSingle();
+
+        if (error || !data || !isMounted) return;
+
+        const latestFamilyId = data.family_id || null;
+        const currentInMemory = userStore.state.currentUser;
+
+        if (!currentInMemory) return;
+
+        // Check if family_id or other core fields changed remotely
+        if (
+          currentInMemory.familyId !== latestFamilyId ||
+          currentInMemory.name !== (data.name || currentInMemory.name) ||
+          currentInMemory.avatar !== (data.avatar || currentInMemory.avatar)
+        ) {
+          const updated: User = {
+            ...currentInMemory,
+            familyId: latestFamilyId,
+            name: data.name || currentInMemory.name,
+            avatar: data.avatar || currentInMemory.avatar,
+            avatarColor: data.avatar_color || currentInMemory.avatarColor,
+            profile: (data.profile as any) || currentInMemory.profile,
+          };
+
+          setCurrentUser(updated);
+          localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updated));
+          userActions.updateFamilyId(latestFamilyId);
+
+          // Invalidate family and user queries immediately
+          queryClient.invalidateQueries({ queryKey: familyKeys.all });
+          queryClient.invalidateQueries({ queryKey: ['family'] });
+          queryClient.invalidateQueries({ queryKey: ['user'] });
+          queryClient.invalidateQueries({ queryKey: ['expenses'] });
+
+          if (latestFamilyId) {
+            fetchFamily(latestFamilyId).then((f) => {
+              if (f && isMounted) familyActions.setFamily(f);
+            });
+          } else {
+            familyActions.setFamily(null);
+          }
+        }
+      } catch (err) {
+        console.warn('Sync user remote warning:', err);
+      }
+    };
+
+    // 1. Supabase Realtime Channel for User row updates
+    const userChannel = supabase
+      .channel(`realtime_user_${currentUserId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'users',
+          filter: `id=eq.${currentUserId}`,
+        },
+        async (payload) => {
+          if (!isMounted) return;
+          const newRow = payload.new as any;
+          if (!newRow) {
+            await syncUserRemote();
+            return;
+          }
+
+          const newFamilyId = newRow.family_id || null;
+          const currentInMemory = userStore.state.currentUser;
+
+          if (currentInMemory) {
+            const updated: User = {
+              ...currentInMemory,
+              familyId: newFamilyId,
+              name: newRow.name || currentInMemory.name,
+              avatar: newRow.avatar || currentInMemory.avatar,
+              avatarColor: newRow.avatar_color || currentInMemory.avatarColor,
+              profile: (newRow.profile as any) || currentInMemory.profile,
+            };
+
+            setCurrentUser(updated);
+            localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updated));
+            userActions.updateFamilyId(newFamilyId);
+
+            queryClient.invalidateQueries({ queryKey: familyKeys.all });
+            queryClient.invalidateQueries({ queryKey: ['family'] });
+            queryClient.invalidateQueries({ queryKey: ['user'] });
+            queryClient.invalidateQueries({ queryKey: ['expenses'] });
+
+            if (newFamilyId) {
+              const f = await fetchFamily(newFamilyId);
+              if (f && isMounted) familyActions.setFamily(f);
+            } else {
+              familyActions.setFamily(null);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // 2. Supabase Realtime Channel for Family updates (if user has a family)
+    let familyChannel: any = null;
+    if (currentUser.familyId) {
+      const famId = currentUser.familyId;
+      familyChannel = supabase
+        .channel(`realtime_family_${famId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'families',
+            filter: `id=eq.${famId}`,
+          },
+          async (payload) => {
+            if (!isMounted) return;
+            queryClient.invalidateQueries({ queryKey: familyKeys.all });
+            queryClient.invalidateQueries({ queryKey: familyKeys.detail(famId) });
+            queryClient.invalidateQueries({ queryKey: ['expenses'] });
+
+            if (payload.eventType === 'DELETE') {
+              userActions.updateFamilyId(null);
+              familyActions.setFamily(null);
+              setCurrentUser((prev) => (prev ? { ...prev, familyId: null } : prev));
+            } else {
+              const freshFam = await fetchFamily(famId);
+              if (freshFam && isMounted) {
+                if (!freshFam.memberIds.includes(currentUserId)) {
+                  userActions.updateFamilyId(null);
+                  familyActions.setFamily(null);
+                  setCurrentUser((prev) => (prev ? { ...prev, familyId: null } : prev));
+                } else {
+                  familyActions.setFamily(freshFam);
+                }
+              }
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    // 3. Supabase Realtime Channel for Expenses (budget and table sync)
+    const expensesChannel = supabase
+      .channel(`realtime_expenses_${currentUser.familyId || currentUserId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'expenses',
+        },
+        () => {
+          if (!isMounted) return;
+          queryClient.invalidateQueries({ queryKey: ['expenses'] });
+          queryClient.invalidateQueries({ queryKey: familyKeys.all });
+        }
+      )
+      .subscribe();
+
+    // 4. Fallback Polling & Window Focus listener
+    const intervalId = setInterval(syncUserRemote, 4000);
+
+    const onFocus = () => {
+      syncUserRemote();
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncUserRemote();
+      }
+    };
+
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    // 5. Cross-tab sync via BroadcastChannel
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel('smart_budget_sync');
+      bc.onmessage = (ev) => {
+        if (ev.data?.type === 'FAMILY_UPDATED') {
+          syncUserRemote();
+        }
+      };
+    } catch {}
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (bc) bc.close();
+      supabase.removeChannel(userChannel);
+      if (familyChannel) supabase.removeChannel(familyChannel);
+      supabase.removeChannel(expensesChannel);
+    };
+  }, [currentUser?.id, currentUser?.familyId, queryClient]);
 
   const refreshUser = () => {
     const raw = localStorage.getItem(LOCAL_SESSION_KEY);

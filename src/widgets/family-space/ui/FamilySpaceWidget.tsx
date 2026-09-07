@@ -26,7 +26,9 @@ export const FamilySpaceWidget: React.FC = () => {
   const { data: queryFamily, isLoading: isQueryLoading, refetch, isFetching } = useFamilyQuery(currentUser?.familyId);
 
   // Prioritize live fresh query data over cached store, falling back gracefully
-  const family = currentUser?.familyId ? (queryFamily || storeFamily) : null;
+  const family = currentUser?.familyId 
+    ? (queryFamily?.id === currentUser.familyId ? queryFamily : storeFamily?.id === currentUser.familyId ? storeFamily : queryFamily || storeFamily)
+    : null;
 
   // Query live family expenses for all members
   const memberIds = useMemo(() => family?.members?.map(m => m.userId) || [], [family?.members]);
