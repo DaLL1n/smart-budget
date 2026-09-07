@@ -210,49 +210,51 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
 
       {/* Interactive Day Selection Chips for the Visible Window (only shown if period has 2 or more days) */}
       {items.length >= 2 && visibleItems.length > 0 && (
-        <div className="w-full">
-          <div className="flex items-center gap-1.5 sm:gap-2 py-1 w-full">
-            {visibleItems.map((item) => {
-              const isSelected = selectedDate === item.date;
-              return (
-                <button
-                  key={item.date}
-                  type="button"
-                  onClick={() => onSelectDate?.(isSelected ? null : item.date)}
-                  className={`flex-1 min-w-0 px-2 sm:px-2.5 py-1.5 rounded-xl text-[11px] font-mono whitespace-nowrap transition-all cursor-pointer flex items-center justify-between gap-1.5 shadow-sm ${
-                    isSelected
-                      ? item.isOverLimit
-                        ? 'bg-rose-500/20 text-rose-100 font-bold border-2 border-rose-400 shadow-md shadow-rose-950/40 ring-1 ring-rose-400/30'
-                        : 'bg-emerald-500/20 text-emerald-100 font-bold border-2 border-emerald-400 shadow-md shadow-emerald-950/40 ring-1 ring-emerald-400/30'
-                      : item.amount > 0
-                      ? 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80 hover:border-slate-600'
-                      : 'bg-slate-950/50 hover:bg-slate-900/60 text-slate-400 hover:text-slate-300 border border-slate-800/70'
-                  }`}
-                  title={isSelected ? 'Снять выбор дня' : `Показать траты за ${item.dayLabel}`}
-                >
-                  <span className="truncate">{item.dayLabel}</span>
-                  {item.amount > 0 ? (
-                    <span
-                      className={`font-semibold shrink-0 ${
-                        isSelected
-                          ? item.isOverLimit
-                            ? 'text-rose-200'
-                            : 'text-emerald-200'
-                          : item.isOverLimit
-                          ? 'text-rose-400'
-                          : 'text-emerald-400'
-                      }`}
-                    >
-                      {formatRubles(item.amount)}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-slate-500 shrink-0">0 ₽</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <ScrollContainer
+          orientation="horizontal"
+          className="w-full min-w-0"
+          scrollClassName="flex items-center gap-1.5 sm:gap-2 py-1"
+        >
+          {visibleItems.map((item) => {
+            const isSelected = selectedDate === item.date;
+            return (
+              <button
+                key={item.date}
+                type="button"
+                onClick={() => onSelectDate?.(isSelected ? null : item.date)}
+                className={`shrink-0 px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-mono whitespace-nowrap transition-colors cursor-pointer flex items-center gap-2 shadow-sm border ${
+                  isSelected
+                    ? item.isOverLimit
+                      ? 'bg-rose-500/20 text-rose-100 font-bold border-rose-400 shadow-md shadow-rose-950/40 ring-1 ring-rose-400/30'
+                      : 'bg-emerald-500/20 text-emerald-100 font-bold border-emerald-400 shadow-md shadow-emerald-950/40 ring-1 ring-emerald-400/30'
+                    : item.amount > 0
+                    ? 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border-slate-700/80 hover:border-slate-600'
+                    : 'bg-slate-950/50 hover:bg-slate-900/60 text-slate-400 hover:text-slate-300 border-slate-800/70'
+                }`}
+                title={isSelected ? 'Снять выбор дня' : `Показать траты за ${item.dayLabel}`}
+              >
+                <span>{item.dayLabel}</span>
+                {item.amount > 0 ? (
+                  <span
+                    className={`font-semibold shrink-0 ${
+                      isSelected
+                        ? item.isOverLimit
+                          ? 'text-rose-200'
+                          : 'text-emerald-200'
+                        : item.isOverLimit
+                        ? 'text-rose-400'
+                        : 'text-emerald-400'
+                    }`}
+                  >
+                    {formatRubles(item.amount)}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-500 shrink-0 font-normal">0 ₽</span>
+                )}
+              </button>
+            );
+          })}
+        </ScrollContainer>
       )}
 
       {/* Pagination Controls for 3-Day Sliding Window */}

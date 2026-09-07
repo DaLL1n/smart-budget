@@ -135,7 +135,7 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
   }, [updateScroll]);
 
   return (
-    <div className={`relative group/scroll ${className}`} {...rest}>
+    <div className={`relative group/scroll min-w-0 max-w-full w-full ${className}`} {...rest}>
       {/* The Scrollable Viewport: native built-in scrollbars are strictly hidden on all devices */}
       <div
         ref={innerRef}
@@ -152,8 +152,13 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
       </div>
 
       {/* Subtle Horizontal Scrollbar Line with Light Indicator Arrows */}
-      {(orientation === 'horizontal' || orientation === 'both') && hasHorizontalOverflow && (
-        <div className="flex items-center gap-1.5 pt-1.5 pb-0.5 px-0.5 w-full select-none" aria-hidden="true">
+      {(orientation === 'horizontal' || orientation === 'both') && (
+        <div 
+          className={`flex items-center gap-1.5 px-0.5 w-full select-none transition-all duration-200 ease-out overflow-hidden ${
+            hasHorizontalOverflow ? 'h-4 opacity-100 mt-1.5' : 'h-0 opacity-0 mt-0 pointer-events-none'
+          }`} 
+          aria-hidden="true"
+        >
           <button
             type="button"
             onClick={() => scrollStep('left')}

@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Calendar, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { DateFilterState, DatePeriod, formatDateIso } from '../../../entities/expense';
-import { ScrollContainer } from '../../../shared/ui';
 
 interface DateRangeSelectorProps {
   filter: DateFilterState;
@@ -36,15 +35,14 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
   };
 
   const shiftCustomDay = (days: number) => {
-    const baseStr = filter.customDate || (filter.period === 'yesterday' 
-      ? formatDateIso(new Date(Date.now() - 86400000))
-      : todayIso);
+    const baseDate = filter.customDate
+      ? new Date(filter.customDate)
+      : filter.period === 'yesterday'
+      ? new Date(Date.now() - 86400000)
+      : new Date();
     
-    const [y, m, d] = baseStr.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d);
-    dateObj.setDate(dateObj.getDate() + days);
-    const nextIso = formatDateIso(dateObj);
-    if (nextIso > todayIso) return;
+    baseDate.setDate(baseDate.getDate() + days);
+    const nextIso = formatDateIso(baseDate);
 
     onChange({
       period: 'custom_day',
@@ -62,11 +60,7 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 rounded-2xl bg-slate-900/90 border border-slate-800/80 backdrop-blur-xl shadow-lg">
       
       {/* Preset Pills */}
-      <ScrollContainer
-        orientation="horizontal"
-        className="rounded-xl border border-slate-800/80 shrink-0"
-        scrollClassName="flex items-center justify-evenly gap-1 sm:gap-1.5 p-1 bg-slate-950/60"
-      >
+      <div className="flex items-center justify-evenly gap-1 sm:gap-1.5 p-1 bg-slate-950/60 rounded-xl border border-slate-800/80 shrink-0 overflow-x-auto no-native-scrollbar">
         {periods.map((item) => {
           const isSelected = filter.period === item.id;
           return (
@@ -95,7 +89,7 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
             </button>
           );
         })}
-      </ScrollContainer>
+      </div>
 
       {/* Day Picker with Prev/Next step buttons */}
       <div className="flex items-center justify-center sm:justify-end gap-1.5 w-full sm:w-auto">
