@@ -98,14 +98,22 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
           x: 'dayLabel',
           y: 'amount',
           fill: (d) => {
-            if (selectedDate && d.date === selectedDate) {
-              return '#10b981';
+            const baseColor = d.isOverLimit ? '#f43f5e' : '#10b981';
+            if (!selectedDate) {
+              return baseColor;
             }
-            if (selectedDate && d.date !== selectedDate) {
-              return d.isOverLimit ? '#f43f5e55' : '#10b98155';
+            if (d.date === selectedDate) {
+              return baseColor;
             }
-            return d.isOverLimit ? '#f43f5e' : '#10b981';
+            return d.isOverLimit ? '#f43f5e35' : '#10b98135';
           },
+          stroke: (d) => {
+            if (selectedDate && d.date === selectedDate) {
+              return d.isOverLimit ? '#fecdd3' : '#a7f3d0';
+            }
+            return 'transparent';
+          },
+          strokeWidth: selectedDate ? 2 : 0,
           radius: 6,
           inset: 3,
           maxThickness: 36,
@@ -211,7 +219,9 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
                 onClick={() => onSelectDate?.(isSelected ? null : item.date)}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-mono whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
                   isSelected
-                    ? 'bg-emerald-500 text-slate-950 font-bold shadow-md ring-2 ring-emerald-400'
+                    ? item.isOverLimit
+                      ? 'bg-rose-500/15 text-rose-200 font-bold border-2 border-rose-400 shadow-sm'
+                      : 'bg-emerald-500/15 text-emerald-200 font-bold border-2 border-emerald-400 shadow-sm'
                     : item.amount > 0
                     ? 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80'
                     : 'bg-slate-950/40 hover:bg-slate-800/60 text-slate-400 border border-slate-800/60'
@@ -220,7 +230,7 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
               >
                 <span>{item.dayLabel}</span>
                 {item.amount > 0 ? (
-                  <span className={`font-semibold ${isSelected ? 'text-slate-950' : 'text-emerald-400'}`}>
+                  <span className={`font-semibold ${item.isOverLimit ? 'text-rose-400' : 'text-emerald-400'}`}>
                     {formatRubles(item.amount)}
                   </span>
                 ) : (
