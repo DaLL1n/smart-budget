@@ -56,6 +56,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string>('all');
   const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
+  const [mobileChartTab, setMobileChartTab] = useState<'categories' | 'daily'>('categories');
 
   useEffect(() => {
     setSelectedDayDate(null);
@@ -112,6 +113,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
   const familyMonthlyBudget = family.monthlyBudget || 60000;
   const familyDailyLimit = Math.round(familyMonthlyBudget / 30);
   const remainingBudget = Math.max(0, familyMonthlyBudget - totalPeriodSpent);
+  const isOverBudget = totalPeriodSpent > familyMonthlyBudget;
   const percentUsed = Math.min(100, Math.round((totalPeriodSpent / familyMonthlyBudget) * 100));
   const avgPerDay = daysInRange > 0 ? Math.round(totalPeriodSpent / daysInRange) : 0;
 
@@ -148,31 +150,66 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in max-w-5xl mx-auto">
 
-      {/* Family KPI Metrics Header: 3 cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        {/* Card 1: Total Family Spent */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-xl relative overflow-hidden space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
-              <Coins className="w-4 h-4 text-emerald-400" />
-              <span>Семейный бюджет</span>
+      {/* 1. Compact Family Budget Hero Status Banner */}
+      <div className="p-4 sm:p-7 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800/80 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex items-center justify-between gap-4 relative z-10">
+          <div className="space-y-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <Users className="w-3 h-3" />
+                <span>Семейный бюджет</span>
+              </span>
+              <span className="text-[11px] text-slate-400 font-mono">
+                {percentUsed}% израсходовано
+              </span>
             </div>
-            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-              {percentUsed}% от лимита
-            </span>
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">
+              {periodTitle || 'Семейная аналитика'}
+            </h1>
           </div>
 
-          <div>
-            <div className="text-2xl sm:text-3xl font-bold font-mono text-white tracking-tight">
-              {formatRubles(totalPeriodSpent)}
-            </div>
-            <div className="text-[11px] text-slate-400 mt-1">
-              Бюджет на месяц: <b className="font-mono text-slate-200">{formatRubles(familyMonthlyBudget)}</b>
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs text-slate-300 shrink-0">
+            <Calendar className="w-3.5 h-3.5 text-teal-400" />
+            <span>Норма: <b className="font-mono text-white">{formatRubles(familyDailyLimit)}</b>/день</span>
+          </div>
+        </div>
+
+        {/* Highlight Remaining Budget & Key Metrics */}
+        <div className="mt-4 pt-4 border-t border-slate-800/70 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-6">
+          <div className="space-y-0.5">
+            <div className="text-[11px] text-slate-400 font-medium">Остаток бюджета семьи:</div>
+            <div className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight ${remainingBudget > 0 ? 'text-teal-400' : 'text-rose-400/85'}`}>
+              {formatRubles(remainingBudget)}
             </div>
           </div>
 
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-3 sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/60 text-xs">
+            <div className="space-y-0.5">
+              <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Потрачено семьей</div>
+              <div className={`text-sm sm:text-base font-bold font-mono ${isOverBudget ? 'text-rose-400/85' : 'text-emerald-400/80'}`}>
+                {formatRubles(totalPeriodSpent)}
+              </div>
+            </div>
+            <div className="space-y-0.5">
+              <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Средний чек в день</div>
+              <div className="text-sm sm:text-base font-bold font-mono text-white flex items-center gap-1.5">
+                <span>{formatRubles(avgPerDay)}</span>
+                <span className="text-[10px] text-slate-400 font-normal hidden sm:inline">/ {formatRubles(familyDailyLimit)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="mt-3.5 space-y-1.5">
+          <div className="flex items-center justify-between text-[11px] text-slate-400">
+            <span>Расход бюджета ({formatRubles(totalPeriodSpent)} из {formatRubles(familyMonthlyBudget)})</span>
+            <span className="font-mono font-bold text-slate-200">{percentUsed}%</span>
+          </div>
           <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden p-0.5 border border-slate-800">
             <div 
               className={`h-full rounded-full transition-all duration-500 ${
@@ -182,72 +219,24 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
             />
           </div>
         </div>
-
-        {/* Card 2: Average Daily Burn */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-xl space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
-              <Calendar className="w-4 h-4 text-teal-400" />
-              <span>Средний чек в день</span>
-            </div>
-          </div>
-
-          <div>
-            <div className="text-2xl sm:text-3xl font-bold font-mono text-white tracking-tight">
-              {formatRubles(avgPerDay)}
-            </div>
-            <div className="text-[11px] text-slate-400 mt-1">
-              Норма: <span className="font-mono text-slate-200">{formatRubles(familyDailyLimit)} / день</span>
-            </div>
-          </div>
-
-          <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
-            {avgPerDay <= familyDailyLimit ? (
-              <span className="text-emerald-400 flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Семья в рамках нормы</span>
-              </span>
-            ) : (
-              <span className="text-amber-400 flex items-center gap-1">
-                <ArrowDownRight className="w-3.5 h-3.5" />
-                <span>Превышение дневной нормы</span>
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Card 3: Remaining Budget */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-xl space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
-              <TrendingUp className="w-4 h-4 text-teal-400" />
-              <span>Остаток бюджета</span>
-            </div>
-          </div>
-
-          <div>
-            <div className="text-2xl sm:text-3xl font-bold font-mono text-teal-300 tracking-tight">
-              {formatRubles(remainingBudget)}
-            </div>
-            <div className="text-[11px] text-slate-400 mt-1">
-              Доступно для семейных покупок
-            </div>
-          </div>
-
-          <div className="text-[11px] text-emerald-400 flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-            <span>Баланс в норме</span>
-          </div>
-        </div>
       </div>
 
-      {/* Member Contributions Breakdown */}
+      {/* 2. Member Contributions Breakdown (Interactive Filter directly under Hero) */}
       <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-3">
         <div className="flex items-center justify-between">
           <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5 text-emerald-400" />
             <span>Вклад участников в общие траты</span>
           </h4>
+          {selectedMemberId !== 'all' && (
+            <button
+              type="button"
+              onClick={() => setSelectedMemberId('all')}
+              className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium transition-colors cursor-pointer"
+            >
+              Сбросить фильтр
+            </button>
+          )}
         </div>
 
         {memberBreakdown.length > 3 ? (
@@ -279,7 +268,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 font-mono shrink-0">
-                        <span className={`font-bold ${isSelected ? 'text-emerald-300' : 'text-slate-200'}`}>
+                        <span className={`font-bold ${isSelected ? 'text-emerald-300' : 'text-emerald-400/80'}`}>
                           {formatRubles(spent)}
                         </span>
                         <span className="text-slate-500 text-[10px]">({percent}%)</span>
@@ -320,7 +309,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 font-mono shrink-0">
-                      <span className={`font-bold ${isSelected ? 'text-emerald-300' : 'text-slate-200'}`}>
+                      <span className={`font-bold ${isSelected ? 'text-emerald-300' : 'text-emerald-400/80'}`}>
                         {formatRubles(spent)}
                       </span>
                       <span className="text-slate-500 text-[10px]">({percent}%)</span>
@@ -339,10 +328,56 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
         )}
       </div>
 
-      {/* Charts Grid: 2 Equal Columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Daily Dynamics Bar Chart */}
-        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4">
+      {/* 3. Mobile Chart Tabs Switcher */}
+      <div className="lg:hidden flex p-1 bg-slate-950/80 border border-slate-800/80 rounded-2xl">
+        <button
+          type="button"
+          onClick={() => setMobileChartTab('categories')}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileChartTab === 'categories'
+              ? 'bg-slate-800 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <PieChart className="w-3.5 h-3.5 text-teal-400" />
+          <span>Категории продуктов</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileChartTab('daily')}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileChartTab === 'daily'
+              ? 'bg-slate-800 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Динамика по дням</span>
+        </button>
+      </div>
+
+      {/* 4. Charts Grid: 2 Equal Columns (Responsive Tabs on mobile) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        {/* Category Donut Chart (Primary on mobile) */}
+        <div className={`p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4 ${
+          mobileChartTab !== 'categories' ? 'hidden lg:block' : 'block'
+        }`}>
+          <div className="flex items-center gap-2">
+            <PieChart className="w-4 h-4 text-teal-400" />
+            <h3 className="text-sm font-bold text-slate-100">Категории продуктов</h3>
+          </div>
+
+          <CategoryDonutChart
+            items={categoryBreakdown}
+            totalAmount={currentViewSpent}
+            selectedDate={selectedDayDate}
+          />
+        </div>
+
+        {/* Daily Dynamics Bar Chart */}
+        <div className={`p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4 ${
+          mobileChartTab !== 'daily' ? 'hidden lg:block' : 'block'
+        }`}>
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0" />
             <h3 className="text-sm font-bold text-slate-100 whitespace-nowrap">Динамика расходов по дням</h3>
@@ -355,20 +390,6 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
             onSelectDate={(date) => {
               setSelectedDayDate(date);
             }}
-          />
-        </div>
-
-        {/* Right: Category Donut Chart */}
-        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4">
-          <div className="flex items-center gap-2">
-            <PieChart className="w-4 h-4 text-teal-400" />
-            <h3 className="text-sm font-bold text-slate-100">Категории продуктов</h3>
-          </div>
-
-          <CategoryDonutChart
-            items={categoryBreakdown}
-            totalAmount={currentViewSpent}
-            selectedDate={selectedDayDate}
           />
         </div>
       </div>

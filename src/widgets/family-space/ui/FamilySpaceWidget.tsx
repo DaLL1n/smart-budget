@@ -177,6 +177,7 @@ export const FamilySpaceWidget: React.FC = () => {
   const activeFamily = displayFamily || family;
   const totalFamilySpent = activeFamily.members.reduce((acc, m) => acc + (m.monthlySpent || 0), 0);
   const monthlyBudget = activeFamily.monthlyBudget || 60000;
+  const isOverBudget = totalFamilySpent > monthlyBudget;
   const remainingBudget = Math.max(0, monthlyBudget - totalFamilySpent);
   const percentUsed = Math.min(100, Math.round((totalFamilySpent / monthlyBudget) * 100));
 
@@ -233,7 +234,7 @@ export const FamilySpaceWidget: React.FC = () => {
         <div className="mt-4 pt-4 border-t border-slate-800/70 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-6">
           <div className="space-y-0.5">
             <div className="text-[11px] text-slate-400 font-medium">Остаток средств семьи:</div>
-            <div className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight ${remainingBudget > 0 ? 'text-teal-300' : 'text-rose-400'}`}>
+            <div className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight ${remainingBudget > 0 ? 'text-teal-400' : 'text-rose-400/85'}`}>
               {formatRubles(remainingBudget)}
             </div>
           </div>
@@ -241,7 +242,7 @@ export const FamilySpaceWidget: React.FC = () => {
           <div className="grid grid-cols-2 sm:flex sm:items-center gap-3 sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/60 text-xs">
             <div className="space-y-0.5">
               <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Потрачено семьей</div>
-              <div className="text-sm sm:text-base font-bold text-emerald-400 font-mono">
+              <div className={`text-sm sm:text-base font-bold font-mono ${isOverBudget ? 'text-rose-400/85' : 'text-emerald-400/80'}`}>
                 {formatRubles(totalFamilySpent)}
               </div>
             </div>

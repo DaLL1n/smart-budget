@@ -191,7 +191,7 @@ export const FamilyMemberList: React.FC<FamilyMemberListProps> = ({
                 <div className="flex items-center justify-between text-[11px] font-mono">
                   <span className="text-slate-400 text-[10px]">Траты за месяц:</span>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-emerald-400">{formatRubles(memberSpent)}</span>
+                    <span className="font-bold text-emerald-400/80">{formatRubles(memberSpent)}</span>
                     <span className="text-slate-500 text-[10px]">({memberPercent}%)</span>
                   </div>
                 </div>

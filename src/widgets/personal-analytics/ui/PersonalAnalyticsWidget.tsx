@@ -51,6 +51,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
   const restoreMutation = useRestoreExpenseMutation(currentUser.id, currentUser.familyId);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
+  const [mobileChartTab, setMobileChartTab] = useState<'categories' | 'daily'>('categories');
 
   useEffect(() => {
     setSelectedDayDate(null);
@@ -99,6 +100,8 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
     return calculatePersonalKPIs(filtered, monthlyBudget, daysInRange, periodTitle);
   }, [filtered, monthlyBudget, daysInRange, periodTitle]);
 
+  const isOverBudget = kpis.totalSpent > monthlyBudget;
+
   const categoryBreakdown = useMemo(() => {
     return calculateCategoryBreakdown(currentViewExpenses);
   }, [currentViewExpenses]);
@@ -116,32 +119,66 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
   }
 
   return (
-    <div className="w-full space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in max-w-5xl mx-auto">
       
-      {/* 3 KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        
-        {/* Card 1: Total Personal Spent */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-xl relative overflow-hidden space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
-              <Coins className="w-4 h-4 text-emerald-400" />
-              <span>Мой бюджет</span>
+      {/* 1. Compact Hero Status Banner */}
+      <div className="p-4 sm:p-7 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800/80 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex items-center justify-between gap-4 relative z-10">
+          <div className="space-y-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <Coins className="w-3 h-3" />
+                <span>Личный бюджет</span>
+              </span>
+              <span className="text-[11px] text-slate-400 font-mono">
+                {kpis.percentOfBudget}% израсходовано
+              </span>
             </div>
-            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-              {kpis.percentOfBudget}% от лимита
-            </span>
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">
+              {periodTitle || 'Аналитика расходов'}
+            </h1>
           </div>
 
-          <div>
-            <div className="text-2xl sm:text-3xl font-bold font-mono text-white tracking-tight">
-              {formatRubles(kpis.totalSpent)}
-            </div>
-            <div className="text-[11px] text-slate-400 mt-1">
-              Бюджет на месяц: <b className="font-mono text-slate-200">{formatRubles(monthlyBudget)}</b>
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs text-slate-300 shrink-0">
+            <Calendar className="w-3.5 h-3.5 text-teal-400" />
+            <span>Норма: <b className="font-mono text-white">{formatRubles(dailyTarget)}</b>/день</span>
+          </div>
+        </div>
+
+        {/* Highlight Remaining Budget & Key Metrics */}
+        <div className="mt-4 pt-4 border-t border-slate-800/70 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-6">
+          <div className="space-y-0.5">
+            <div className="text-[11px] text-slate-400 font-medium">Остаток бюджета:</div>
+            <div className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight ${kpis.remainingBudget > 0 ? 'text-teal-400' : 'text-rose-400/85'}`}>
+              {formatRubles(kpis.remainingBudget)}
             </div>
           </div>
 
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-3 sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/60 text-xs">
+            <div className="space-y-0.5">
+              <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Потрачено</div>
+              <div className={`text-sm sm:text-base font-bold font-mono ${isOverBudget ? 'text-rose-400/85' : 'text-emerald-400/80'}`}>
+                {formatRubles(kpis.totalSpent)}
+              </div>
+            </div>
+            <div className="space-y-0.5">
+              <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Средний чек в день</div>
+              <div className="text-sm sm:text-base font-bold font-mono text-white flex items-center gap-1.5">
+                <span>{formatRubles(kpis.averagePerDay)}</span>
+                <span className="text-[10px] text-slate-400 font-normal hidden sm:inline">/ {formatRubles(dailyTarget)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="mt-3.5 space-y-1.5">
+          <div className="flex items-center justify-between text-[11px] text-slate-400">
+            <span>Расход бюджета ({formatRubles(kpis.totalSpent)} из {formatRubles(monthlyBudget)})</span>
+            <span className="font-mono font-bold text-slate-200">{kpis.percentOfBudget}%</span>
+          </div>
           <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden p-0.5 border border-slate-800">
             <div 
               className={`h-full rounded-full transition-all duration-500 ${
@@ -151,71 +188,59 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
             />
           </div>
         </div>
+      </div>
 
-        {/* Card 2: Average Per Day */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-xl space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
-              <Calendar className="w-4 h-4 text-teal-400" />
-              <span>Средний чек в день</span>
-            </div>
-          </div>
-
-          <div>
-            <div className="text-2xl sm:text-3xl font-bold font-mono text-white tracking-tight">
-              {formatRubles(kpis.averagePerDay)}
-            </div>
-            <div className="text-[11px] text-slate-400 mt-1">
-              Норма: <span className="font-mono text-slate-200">{formatRubles(dailyTarget)} / день</span>
-            </div>
-          </div>
-
-          <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
-            {kpis.averagePerDay <= dailyTarget ? (
-              <span className="text-emerald-400 flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>В рамках личной нормы</span>
-              </span>
-            ) : (
-              <span className="text-amber-400 flex items-center gap-1">
-                <ArrowDownRight className="w-3.5 h-3.5" />
-                <span>Превышение нормы дня</span>
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Card 3: Remaining Budget */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-xl space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
-              <TrendingUp className="w-4 h-4 text-teal-400" />
-              <span>Остаток бюджета</span>
-            </div>
-          </div>
-
-          <div>
-            <div className="text-2xl sm:text-3xl font-bold font-mono text-teal-300 tracking-tight">
-              {formatRubles(kpis.remainingBudget)}
-            </div>
-            <div className="text-[11px] text-slate-400 mt-1">
-              Доступно на продукты до конца месяца
-            </div>
-          </div>
-
-          <div className="text-[11px] text-emerald-400 flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-            <span>Баланс в норме</span>
-          </div>
-        </div>
-
+      {/* Mobile Chart Tabs Switcher */}
+      <div className="lg:hidden flex p-1 bg-slate-950/80 border border-slate-800/80 rounded-2xl">
+        <button
+          type="button"
+          onClick={() => setMobileChartTab('categories')}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileChartTab === 'categories'
+              ? 'bg-slate-800 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <PieChart className="w-3.5 h-3.5 text-teal-400" />
+          <span>Категории продуктов</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileChartTab('daily')}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileChartTab === 'daily'
+              ? 'bg-slate-800 text-white shadow-sm'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Динамика по дням</span>
+        </button>
       </div>
 
       {/* Main Visuals Grid: Daily Dynamics & Category Donut */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         
+        {/* Category Breakdown Donut Chart (Primary on mobile) */}
+        <div className={`p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4 ${
+          mobileChartTab !== 'categories' ? 'hidden lg:block' : 'block'
+        }`}>
+          <div className="flex items-center gap-2">
+            <PieChart className="w-4 h-4 text-teal-400" />
+            <h3 className="text-sm font-bold text-slate-100">Категории продуктов</h3>
+          </div>
+
+          <CategoryDonutChart 
+            items={categoryBreakdown} 
+            totalAmount={currentViewSpent} 
+            selectedDate={selectedDayDate}
+          />
+        </div>
+
         {/* Daily Dynamics Bar Chart */}
-        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4">
+        <div className={`p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4 ${
+          mobileChartTab !== 'daily' ? 'hidden lg:block' : 'block'
+        }`}>
           <div className="flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0" />
             <h3 className="text-sm font-bold text-slate-100 whitespace-nowrap">Динамика расходов по дням</h3>
@@ -226,20 +251,6 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
             dailyLimit={dailyTarget} 
             selectedDate={selectedDayDate}
             onSelectDate={(date) => setSelectedDayDate(date)}
-          />
-        </div>
-
-        {/* Category Breakdown Donut Chart */}
-        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4">
-          <div className="flex items-center gap-2">
-            <PieChart className="w-4 h-4 text-teal-400" />
-            <h3 className="text-sm font-bold text-slate-100">Категории продуктов</h3>
-          </div>
-
-          <CategoryDonutChart 
-            items={categoryBreakdown} 
-            totalAmount={currentViewSpent} 
-            selectedDate={selectedDayDate}
           />
         </div>
 
