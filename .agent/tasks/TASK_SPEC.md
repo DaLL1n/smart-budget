@@ -1,25 +1,22 @@
 # TASK SPECIFICATION (Gemini 3.8 Flash Optimized)
 
 ## 1. Persona & Role
-Senior Frontend Engineer (React 19, DOM Event Architecture, Pointer Events).
+Senior Frontend Engineer (CSS Architecture, UI/UX Polish).
 
 ## 2. Task & Workflow
-- Цель: Реализовать полноценное перетаскивание (drag-and-drop) ползунка кастомного скроллбара курсором мыши на ПК в компоненте `ScrollContainer`.
+- Цель: Уменьшить визуальную толщину всех скроллбаров (кастомного ScrollContainer и системных webkit-стилей) ровно в два раза.
 - Шаги реализации:
-  1. Добавить `Pointer Capture` API (`onPointerDown`, `onPointerMove`, `onPointerUp`, `onPointerCancel`) для горизонтального и вертикального ползунков.
-  2. Реализовать расчет смещения прокрутки с учетом соотношения ширины трека и ползунка без задержек (отключение `transition` во время драга).
-  3. Увеличить зону захвата (hit-area) для удобного клика мышью на десктопе.
-  4. Добавить визуальные состояния курсора: `cursor-grab` при наведении и `cursor-grabbing` при зажатии.
-  5. Провести проверку типов `tsc --noEmit` и сборку `npm run build`.
+  1. В `ScrollContainer.tsx` уменьшить толщину трека и ползунка с 6-8px (`h-1.5`/`w-1.5`) до 3-4px (`h-[3px]`/`w-[3px]`). Сохранить при этом удобную зону захвата курсором (hit-area).
+  2. В `src/index.css` уменьшить размеры `::-webkit-scrollbar` с 8px до 4px (по ширине и высоте).
+  3. Проверить отсутствие регрессий в `tsc --noEmit` и `npm run build`.
+  4. Обновить отчеты `handoff.md` и `test-report.md`.
 
 ## 3. Context & Guardrails
-- Стек: React 19, TypeScript, Tailwind CSS v4.
+- Стек: React 19, Tailwind CSS v4.
 - thinking_level = "medium".
 - Без LaTeX-символов.
-- Устранить любые конфликты выделения текста во время драга (`select-none`, `touch-none`).
 
 ## 4. Format & Definition of Done (DoD)
-- [x] Ползунок скроллбара плавно и мгновенно перетаскивается курсором мыши при зажатии.
-- [x] Работает захват указателя (`setPointerCapture`) — курсор не срывается при выходе за пределы трека.
-- [x] Клик по свободному месту трека плавно перемещает ползунок и позволяет сразу продолжить перетаскивание.
+- [x] Толщина горизонтального и вертикального скроллбара уменьшена в 2 раза.
+- [x] Зона клика и перетаскивания курсором мыши осталась удобной и стабильной.
 - [x] `tsc --noEmit` и `npm run build` проходят без ошибок.

@@ -342,17 +342,17 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
             className="h-5 flex items-center flex-1 cursor-pointer select-none relative group/track"
             title="Зажмите и перетащите для прокрутки"
           >
-            {/* Visual Track Bar */}
-            <div className="w-full h-1.5 group-hover/track:h-2 bg-slate-800/80 group-hover/track:bg-slate-800 rounded-full relative transition-all duration-150 overflow-visible">
+            {/* Visual Track Bar (2x thinner: 3px normal, 4px on hover) */}
+            <div className="w-full h-[3px] group-hover/track:h-1 bg-slate-800/80 group-hover/track:bg-slate-800 rounded-full relative transition-all duration-150 overflow-visible">
               {/* Draggable Pill Thumb */}
               <div 
                 onPointerDown={handleThumbPointerDownH}
                 onPointerMove={handleThumbPointerMoveH}
                 onPointerUp={handleThumbPointerUpH}
                 onPointerCancel={handleThumbPointerUpH}
-                className={`absolute -top-0.5 -bottom-0.5 rounded-full touch-none select-none ${
+                className={`absolute -top-[0.5px] -bottom-[0.5px] rounded-full touch-none select-none ${
                   isDraggingH 
-                    ? 'bg-emerald-400 shadow-md shadow-emerald-500/50 ring-2 ring-emerald-400/40 cursor-grabbing transition-none' 
+                    ? 'bg-emerald-400 shadow-md shadow-emerald-500/50 ring-1 ring-emerald-400/40 cursor-grabbing transition-none' 
                     : 'bg-slate-400/80 hover:bg-emerald-400/90 hover:shadow-sm cursor-grab transition-all duration-150'
                 }`}
                 style={{
@@ -408,17 +408,17 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
             className="w-4 flex justify-center flex-1 cursor-pointer select-none relative group/vtrack"
             title="Зажмите и перетащите для прокрутки"
           >
-            {/* Visual Track Bar */}
-            <div className="h-full w-1.5 group-hover/vtrack:w-2 bg-slate-800/80 group-hover/vtrack:bg-slate-800 rounded-full relative transition-all duration-150 overflow-visible">
+            {/* Visual Track Bar (2x thinner: 3px normal, 4px on hover) */}
+            <div className="h-full w-[3px] group-hover/vtrack:w-1 bg-slate-800/80 group-hover/vtrack:bg-slate-800 rounded-full relative transition-all duration-150 overflow-visible">
               {/* Draggable Pill Thumb */}
               <div 
                 onPointerDown={handleThumbPointerDownV}
                 onPointerMove={handleThumbPointerMoveV}
                 onPointerUp={handleThumbPointerUpV}
                 onPointerCancel={handleThumbPointerUpV}
-                className={`absolute -left-0.5 -right-0.5 rounded-full touch-none select-none ${
+                className={`absolute -left-[0.5px] -right-[0.5px] rounded-full touch-none select-none ${
                   isDraggingV 
-                    ? 'bg-emerald-400 shadow-md shadow-emerald-500/50 ring-2 ring-emerald-400/40 cursor-grabbing transition-none' 
+                    ? 'bg-emerald-400 shadow-md shadow-emerald-500/50 ring-1 ring-emerald-400/40 cursor-grabbing transition-none' 
                     : 'bg-slate-400/80 hover:bg-emerald-400/90 hover:shadow-sm cursor-grab transition-all duration-150'
                 }`}
                 style={{

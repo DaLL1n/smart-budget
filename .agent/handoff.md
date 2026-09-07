@@ -3,5 +3,6 @@
 - status: SUCCESS
 - artifacts_produced:
   - src/shared/ui/scroll-container/ScrollContainer.tsx
+  - src/index.css
 - pending_tasks: []
-- blockers_or_notes: Реализован drag-and-drop скроллбара при зажатии курсора мыши на десктопе через Pointer Capture API (onPointerDown, onPointerMove, onPointerUp, onPointerCancel). Добавлены визуальные состояния курсора (cursor-grab, cursor-grabbing), мгновенный отклик без задержек и увеличенная интерактивная зона захвата. tsc --noEmit и vite build завершились без ошибок.
+- blockers_or_notes: Толщина кастомных и системных скроллбаров уменьшена ровно в 2 раза (в ScrollContainer: с 6-8px до 3-4px; в index.css: с 8px до 4px). Зона клика и драга сохранена удобной. Проверки tsc --noEmit и vite build завершились без ошибок.

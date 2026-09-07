@@ -137,8 +137,8 @@ body,
 /* WebKit (Chrome, Edge, Safari iOS/macOS, Android Chrome, Samsung Internet) */
 *::-webkit-scrollbar,
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 4px;
+  height: 4px;
   display: block;
 }
 
@@ -146,7 +146,7 @@ body,
 ::-webkit-scrollbar-track {
   background: rgba(15, 23, 42, 0.55);
   border-radius: 9999px !important;
-  margin: 3px 6px; /* Inset so track rounded caps are clearly visible and detached from box corners */
+  margin: 1px 4px; /* Inset so track rounded caps are clearly visible and detached from box corners */
   border: 1px solid rgba(51, 65, 85, 0.3);
   transition: background-color 0.3s ease;
 }
@@ -160,7 +160,7 @@ body,
 ::-webkit-scrollbar-thumb {
   background-color: rgba(148, 163, 184, 0.5);
   border-radius: 9999px !important;
-  border: 1.5px solid transparent;
+  border: 1px solid transparent;
   background-clip: padding-box; /* Gives breathing room inside track creating a floating rounded pill */
   transition: background-color 0.25s ease, box-shadow 0.25s ease;
 }
@@ -179,8 +179,8 @@ body,
 
   *::-webkit-scrollbar,
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 4px;
+    height: 4px;
     display: block;
   }
 
