@@ -216,7 +216,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
           <h3 className="text-sm font-bold text-slate-100">
             История покупок
           </h3>
-          {selectedDate ? (
+          {selectedDate && (
             <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-mono">
               <span>{formatShortDayMonthYear(selectedDate)}</span>
               {onResetDateFilter && (
@@ -230,11 +230,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
                 </button>
               )}
             </div>
-          ) : periodTitle ? (
-            <span className="text-xs text-slate-400 font-mono">
-              ({periodTitle})
-            </span>
-          ) : null}
+          )}
         </div>
       </div>
 
