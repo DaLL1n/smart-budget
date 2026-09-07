@@ -173,7 +173,7 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
           >
             <div 
               className={`absolute top-0 bottom-0 rounded-full transition-all duration-150 ${
-                canScrollRight || canScrollLeft ? 'bg-slate-400/60 hover:bg-emerald-400' : 'bg-slate-600/40'
+                canScrollRight || canScrollLeft ? 'bg-slate-400/60 hover:bg-slate-300' : 'bg-slate-600/40'
               }`}
               style={{
                 left: `${scrollProgress.leftPercent}%`,
@@ -185,12 +185,12 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
             type="button"
             onClick={() => scrollStep('right')}
             disabled={!canScrollRight}
-            className="p-0.5 rounded text-slate-500 hover:text-emerald-400 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+            className="p-0.5 rounded text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
             title="Прокрутить вправо"
           >
             <ChevronRight 
               className={`w-3 h-3 shrink-0 transition-colors duration-200 ${
-                canScrollRight ? 'text-emerald-400/90' : 'text-slate-700/30'
+                canScrollRight ? 'text-slate-400' : 'text-slate-700/30'
               }`} 
             />
           </button>
@@ -219,7 +219,7 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
           >
             <div 
               className={`absolute left-0 right-0 rounded-full transition-all duration-150 ${
-                canScrollTop || canScrollBottom ? 'bg-slate-400/60 hover:bg-emerald-400' : 'bg-slate-600/40'
+                canScrollTop || canScrollBottom ? 'bg-slate-400/60 hover:bg-slate-300' : 'bg-slate-600/40'
               }`}
               style={{
                 top: `${scrollProgress.topPercent}%`,
@@ -231,12 +231,12 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
             type="button"
             onClick={() => scrollStep('down')}
             disabled={!canScrollBottom}
-            className="p-0.5 rounded text-slate-500 hover:text-emerald-400 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+            className="p-0.5 rounded text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
             title="Прокрутить вниз"
           >
             <ChevronDown 
               className={`w-2.5 h-2.5 shrink-0 transition-colors duration-200 ${
-                canScrollBottom ? 'text-emerald-400/90' : 'text-slate-700/30'
+                canScrollBottom ? 'text-slate-400' : 'text-slate-700/30'
               }`} 
             />
           </button>
