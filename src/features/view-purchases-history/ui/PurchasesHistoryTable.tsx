@@ -98,6 +98,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
   const columnHelper = legacyCreateColumnHelper<Expense>();
   const columns = useMemo(() => {
     const cols: any[] = [
+      // 1. Дата
       columnHelper.accessor('date', {
         header: 'Дата',
         cell: info => (
@@ -106,8 +107,60 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
           </span>
         ),
       }),
+      // 2. Сумма
+      columnHelper.accessor('amount', {
+        header: 'Сумма',
+        cell: info => (
+          <span className="font-mono font-bold text-xs text-emerald-400 whitespace-nowrap">
+            {formatRubles(info.getValue())}
+          </span>
+        ),
+      }),
+      // 3. Магазин
+      columnHelper.accessor('storeId', {
+        header: 'Магазин',
+        cell: info => {
+          const sId = info.getValue();
+          const storeObj = POPULAR_STORES.find(s => s.id === sId);
+          const storeColor = storeObj?.color || '#10b981';
+          return (
+            <div className="flex items-center gap-1.5 min-w-0 whitespace-nowrap">
+              <span
+                className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+                style={{ backgroundColor: storeColor }}
+              />
+              <span className="text-xs text-slate-300 truncate">
+                {storeObj?.name || sId || 'Продуктовый'}
+              </span>
+            </div>
+          );
+        },
+      }),
+      // 4. Категория
+      columnHelper.accessor('category', {
+        header: 'Категория',
+        cell: info => {
+          const exp = info.row.original;
+          const catId = info.getValue();
+          const cat = EXPENSE_CATEGORIES.find(c => c.id === catId) || EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1];
+          return (
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-300 whitespace-nowrap max-w-full">
+                <span className="shrink-0">{cat.icon}</span>
+                <span className="truncate">{cat.label}</span>
+              </span>
+              {exp.title && exp.title.toLowerCase() !== cat.label.toLowerCase() && (
+                <span className="text-xs text-slate-400 truncate hidden sm:inline" title={exp.title}>
+                  ({exp.title})
+                </span>
+              )}
+            </div>
+          );
+        },
+      }),
     ];
 
+    // 5. Кто купил (только в семейной аналитике)
     if (isBuyerVisible) {
       cols.push(
         columnHelper.accessor('userId', {
@@ -134,55 +187,9 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
         })
       );
     }
+
+    // 6. Действия
     cols.push(
-      columnHelper.accessor('category', {
-        header: 'Категория',
-        cell: info => {
-          const exp = info.row.original;
-          const catId = info.getValue();
-          const cat = EXPENSE_CATEGORIES.find(c => c.id === catId) || EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1];
-          return (
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-300 whitespace-nowrap max-w-full">
-                <span className="shrink-0">{cat.icon}</span>
-                <span className="truncate">{cat.label}</span>
-              </span>
-              {exp.title && exp.title.toLowerCase() !== cat.label.toLowerCase() && (
-                <span className="text-xs text-slate-400 truncate hidden sm:inline" title={exp.title}>
-                  ({exp.title})
-                </span>
-              )}
-            </div>
-          );
-        },
-      }),
-      columnHelper.accessor('storeId', {
-        header: 'Магазин',
-        cell: info => {
-          const sId = info.getValue();
-          const storeObj = POPULAR_STORES.find(s => s.id === sId);
-          const storeColor = storeObj?.color || '#10b981';
-          return (
-            <div className="flex items-center gap-1.5 min-w-0 whitespace-nowrap">
-              <span
-                className="w-2 h-2 rounded-full shrink-0 shadow-sm"
-                style={{ backgroundColor: storeColor }}
-              />
-              <span className="text-xs text-slate-300 truncate">
-                {storeObj?.name || sId || 'Продуктовый'}
-              </span>
-            </div>
-          );
-        },
-      }),
-      columnHelper.accessor('amount', {
-        header: 'Сумма',
-        cell: info => (
-          <span className="font-mono font-bold text-xs text-emerald-400 whitespace-nowrap">
-            {formatRubles(info.getValue())}
-          </span>
-        ),
-      }),
       columnHelper.display({
         id: 'actions',
         header: '',
@@ -262,10 +269,11 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
           {[...Array(5)].map((_, i) => (
             <div key={i} className="h-11 w-full bg-slate-800/25 rounded-xl border border-slate-800/40 flex items-center justify-between px-4 gap-4">
               <div className="w-20 h-3.5 bg-slate-700/50 rounded" />
-              <div className="w-24 h-3.5 bg-slate-700/50 rounded hidden sm:block" />
-              <div className="w-28 h-5 bg-slate-700/50 rounded-lg" />
+              <div className="w-16 h-3.5 bg-slate-700/50 rounded" />
               <div className="w-24 h-3.5 bg-slate-700/50 rounded" />
-              <div className="w-16 h-3.5 bg-slate-700/50 rounded ml-auto" />
+              <div className="w-28 h-5 bg-slate-700/50 rounded-lg" />
+              {isBuyerVisible && <div className="w-20 h-3.5 bg-slate-700/50 rounded hidden sm:block" />}
+              <div className="w-6 h-3.5 bg-slate-700/50 rounded ml-auto" />
             </div>
           ))}
         </div>
@@ -275,22 +283,33 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
         </div>
       ) : (
         <div className="overflow-x-auto custom-scrollbar">
-          <table className={`w-full ${isBuyerVisible ? 'min-w-[620px]' : 'min-w-[520px]'} table-fixed text-left border-collapse`}>
+          <table className={`w-full ${isBuyerVisible ? 'min-w-[620px]' : 'min-w-[480px] sm:min-w-full'} table-fixed text-left border-collapse`}>
             {isBuyerVisible ? (
               <colgroup>
-                <col className="w-[17%]" />
-                <col className="w-[19%]" />
-                <col className="w-[26%]" />
-                <col className="w-[18%]" />
+                {/* 1. Дата */}
+                <col className="w-[15%]" />
+                {/* 2. Сумма */}
                 <col className="w-[14%]" />
+                {/* 3. Магазин */}
+                <col className="w-[18%]" />
+                {/* 4. Категория */}
+                <col className="w-[28%]" />
+                {/* 5. Кто купил */}
+                <col className="w-[19%]" />
+                {/* 6. Действия */}
                 <col className="w-[6%]" />
               </colgroup>
             ) : (
               <colgroup>
-                <col className="w-[20%]" />
-                <col className="w-[36%]" />
-                <col className="w-[22%]" />
-                <col className="w-[16%]" />
+                {/* 1. Дата */}
+                <col className="w-[18%]" />
+                {/* 2. Сумма */}
+                <col className="w-[18%]" />
+                {/* 3. Магазин */}
+                <col className="w-[23%]" />
+                {/* 4. Категория */}
+                <col className="w-[35%]" />
+                {/* 5. Действия */}
                 <col className="w-[6%]" />
               </colgroup>
             )}
