@@ -33,9 +33,8 @@ export function useFamilyQuery(familyId?: string | null) {
       } catch {}
       return undefined;
     },
-    initialDataUpdatedAt: 0,
-    staleTime: 1000 * 60, // 1 minute
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: false,
     networkMode: 'offlineFirst',
   });
 }

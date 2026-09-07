@@ -40,18 +40,10 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
   const deleteMutation = useDeleteExpenseMutation(currentUser.id, currentUser.familyId);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
-  const [isDateTransitioning, setIsDateTransitioning] = useState(false);
 
   useEffect(() => {
     setSelectedDayDate(null);
   }, [filter]);
-
-  // Smooth skeleton transition when switching dates
-  useEffect(() => {
-    setIsDateTransitioning(true);
-    const timer = setTimeout(() => setIsDateTransitioning(false), 200);
-    return () => clearTimeout(timer);
-  }, [filter, selectedDayDate]);
 
   const handleDelete = async (expenseId: string) => {
     setDeletingId(expenseId);
@@ -96,7 +88,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
     return calculateStoreBreakdown(filtered);
   }, [filtered]);
 
-  if (isLoading) {
+  if (isLoading && expenses.length === 0) {
     return (
       <div className="w-full py-16 flex flex-col items-center justify-center space-y-3">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
@@ -124,21 +116,12 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
           </div>
 
           <div>
-            {isDateTransitioning ? (
-              <div className="space-y-2 py-1">
-                <div className="h-8 w-32 bg-slate-800/80 rounded-lg animate-pulse" />
-                <div className="h-3 w-40 bg-slate-800/60 rounded animate-pulse" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
-                  {formatRubles(kpis.totalSpent)}
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1">
-                  Бюджет на месяц: <b className="font-mono text-slate-200">{formatRubles(monthlyBudget)}</b>
-                </div>
-              </>
-            )}
+            <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
+              {formatRubles(kpis.totalSpent)}
+            </div>
+            <div className="text-[11px] text-slate-400 mt-1">
+              Бюджет на месяц: <b className="font-mono text-slate-200">{formatRubles(monthlyBudget)}</b>
+            </div>
           </div>
 
           <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden p-0.5 border border-slate-800">
@@ -164,21 +147,12 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
           </div>
 
           <div>
-            {isDateTransitioning ? (
-              <div className="space-y-2 py-1">
-                <div className="h-8 w-28 bg-slate-800/80 rounded-lg animate-pulse" />
-                <div className="h-3 w-36 bg-slate-800/60 rounded animate-pulse" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
-                  {formatRubles(kpis.averagePerDay)}
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1">
-                  Норма: <span className="font-mono text-slate-200">{formatRubles(dailyTarget)} / день</span>
-                </div>
-              </>
-            )}
+            <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
+              {formatRubles(kpis.averagePerDay)}
+            </div>
+            <div className="text-[11px] text-slate-400 mt-1">
+              Норма: <span className="font-mono text-slate-200">{formatRubles(dailyTarget)} / день</span>
+            </div>
           </div>
 
           <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
@@ -206,21 +180,12 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
           </div>
 
           <div>
-            {isDateTransitioning ? (
-              <div className="space-y-2 py-1">
-                <div className="h-8 w-28 bg-slate-800/80 rounded-lg animate-pulse" />
-                <div className="h-3 w-44 bg-slate-800/60 rounded animate-pulse" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-teal-300 tracking-tight">
-                  {formatRubles(kpis.remainingBudget)}
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1">
-                  Доступно на продукты до конца месяца
-                </div>
-              </>
-            )}
+            <div className="text-2xl sm:text-3xl font-black font-mono text-teal-300 tracking-tight">
+              {formatRubles(kpis.remainingBudget)}
+            </div>
+            <div className="text-[11px] text-slate-400 mt-1">
+              Доступно на продукты до конца месяца
+            </div>
           </div>
 
           <div className="text-[11px] text-emerald-400 flex items-center gap-1">
@@ -265,22 +230,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
       </div>
 
       {/* Stores Breakdown */}
-      {isDateTransitioning ? (
-        <div className="p-3.5 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4 animate-pulse">
-          <div className="h-5 w-48 bg-slate-800/80 rounded-lg" />
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="space-y-1.5">
-                <div className="flex justify-between">
-                  <div className="h-3.5 w-24 bg-slate-800/70 rounded" />
-                  <div className="h-3.5 w-20 bg-slate-800/70 rounded" />
-                </div>
-                <div className="w-full h-2 rounded-full bg-slate-800/50" />
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : storeRankings.length > 0 && (
+      {storeRankings.length > 0 && (
         <div className="p-3.5 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-4 h-4 text-amber-400" />
@@ -314,7 +264,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
       <PurchasesHistoryTable 
         expenses={tableExpenses}
         totalPeriodExpensesCount={filtered.length}
-        isLoading={isDateTransitioning || isLoading}
+        isLoading={isLoading && expenses.length === 0}
         selectedDate={selectedDayDate}
         periodTitle={periodTitle}
         onResetDateFilter={() => setSelectedDayDate(null)}

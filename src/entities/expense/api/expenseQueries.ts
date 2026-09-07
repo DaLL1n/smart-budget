@@ -29,11 +29,9 @@ export function usePersonalExpensesQuery(userId?: string) {
       if (!userId) return [];
       return getLocalExpenses(userId);
     },
-    initialDataUpdatedAt: 0,
     enabled: !!userId,
-    staleTime: 1000 * 5,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -51,11 +49,9 @@ export function useFamilyExpensesQuery(familyId?: string | null, memberIds: stri
       if (!familyId) return [];
       return getLocalFamilyExpenses(familyId, memberIds);
     },
-    initialDataUpdatedAt: 0,
     enabled: !!familyId,
-    staleTime: 1000 * 5,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
   });
 }
 

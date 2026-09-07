@@ -47,18 +47,10 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string>('all');
   const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
-  const [isDateTransitioning, setIsDateTransitioning] = useState(false);
 
   useEffect(() => {
     setSelectedDayDate(null);
   }, [filter, selectedMemberId]);
-
-  // Smooth skeleton transition when switching dates
-  useEffect(() => {
-    setIsDateTransitioning(true);
-    const timer = setTimeout(() => setIsDateTransitioning(false), 200);
-    return () => clearTimeout(timer);
-  }, [filter, selectedDayDate]);
 
   const handleDelete = async (expenseId: string) => {
     setDeletingId(expenseId);
@@ -162,21 +154,12 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
           </div>
 
           <div>
-            {isDateTransitioning ? (
-              <div className="space-y-2 py-1">
-                <div className="h-8 w-32 bg-slate-800/80 rounded-lg animate-pulse" />
-                <div className="h-3 w-40 bg-slate-800/60 rounded animate-pulse" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
-                  {formatRubles(totalPeriodSpent)}
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1">
-                  Бюджет на месяц: <b className="font-mono text-slate-200">{formatRubles(familyMonthlyBudget)}</b>
-                </div>
-              </>
-            )}
+            <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
+              {formatRubles(totalPeriodSpent)}
+            </div>
+            <div className="text-[11px] text-slate-400 mt-1">
+              Бюджет на месяц: <b className="font-mono text-slate-200">{formatRubles(familyMonthlyBudget)}</b>
+            </div>
           </div>
 
           <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden p-0.5 border border-slate-800">
@@ -202,21 +185,12 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
           </div>
 
           <div>
-            {isDateTransitioning ? (
-              <div className="space-y-2 py-1">
-                <div className="h-8 w-28 bg-slate-800/80 rounded-lg animate-pulse" />
-                <div className="h-3 w-36 bg-slate-800/60 rounded animate-pulse" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
-                  {formatRubles(avgPerDay)}
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1">
-                  Норма: <span className="font-mono text-slate-200">{formatRubles(familyDailyLimit)} / день</span>
-                </div>
-              </>
-            )}
+            <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
+              {formatRubles(avgPerDay)}
+            </div>
+            <div className="text-[11px] text-slate-400 mt-1">
+              Норма: <span className="font-mono text-slate-200">{formatRubles(familyDailyLimit)} / день</span>
+            </div>
           </div>
 
           <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
@@ -244,21 +218,12 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
           </div>
 
           <div>
-            {isDateTransitioning ? (
-              <div className="space-y-2 py-1">
-                <div className="h-8 w-28 bg-slate-800/80 rounded-lg animate-pulse" />
-                <div className="h-3 w-44 bg-slate-800/60 rounded animate-pulse" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl sm:text-3xl font-black font-mono text-teal-300 tracking-tight">
-                  {formatRubles(remainingBudget)}
-                </div>
-                <div className="text-[11px] text-slate-400 mt-1">
-                  Доступно для семейных покупок
-                </div>
-              </>
-            )}
+            <div className="text-2xl sm:text-3xl font-black font-mono text-teal-300 tracking-tight">
+              {formatRubles(remainingBudget)}
+            </div>
+            <div className="text-[11px] text-slate-400 mt-1">
+              Доступно для семейных покупок
+            </div>
           </div>
 
           <div className="text-[11px] text-emerald-400 flex items-center gap-1">
@@ -366,61 +331,32 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
           </h4>
         </div>
 
-        {isDateTransitioning ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-            {[...Array(family.members.length || 3)].map((_, i) => (
-              <div key={i} className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2 animate-pulse">
-                <div className="flex items-center justify-between">
-                  <div className="h-4 w-24 bg-slate-800/70 rounded" />
-                  <div className="h-4 w-16 bg-slate-800/70 rounded" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+          {memberBreakdown.map(({ member, spent, percent }) => (
+            <div key={member.userId} className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-base shrink-0">{member.avatar || '🥑'}</span>
+                  <span className="font-semibold text-slate-200 truncate">{member.name}</span>
                 </div>
-                <div className="w-full h-1.5 rounded-full bg-slate-800/50" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-            {memberBreakdown.map(({ member, spent, percent }) => (
-              <div key={member.userId} className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-base shrink-0">{member.avatar || '🥑'}</span>
-                    <span className="font-semibold text-slate-200 truncate">{member.name}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 font-mono shrink-0">
-                    <span className="text-slate-200 font-bold">{formatRubles(spent)}</span>
-                    <span className="text-slate-500 text-[10px]">({percent}%)</span>
-                  </div>
-                </div>
-                <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
-                    style={{ width: `${percent}%` }}
-                  />
+                <div className="flex items-center gap-1.5 font-mono shrink-0">
+                  <span className="text-slate-200 font-bold">{formatRubles(spent)}</span>
+                  <span className="text-slate-500 text-[10px]">({percent}%)</span>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+              <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Stores Breakdown (Matches Рейтинг супермаркетов in Personal Analytics) */}
-      {isDateTransitioning ? (
-        <div className="p-3.5 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4 animate-pulse">
-          <div className="h-5 w-48 bg-slate-800/80 rounded-lg" />
-          <div className="space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="space-y-1.5">
-                <div className="flex justify-between">
-                  <div className="h-3.5 w-24 bg-slate-800/70 rounded" />
-                  <div className="h-3.5 w-20 bg-slate-800/70 rounded" />
-                </div>
-                <div className="w-full h-2 rounded-full bg-slate-800/50" />
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : storeBreakdown.length > 0 && (
+      {storeBreakdown.length > 0 && (
         <div className="p-3.5 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-4 h-4 text-amber-400" />
@@ -454,7 +390,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
       <PurchasesHistoryTable 
         expenses={tableExpenses}
         totalPeriodExpensesCount={activeExpenses.length}
-        isLoading={isDateTransitioning || isLoading}
+        isLoading={isLoading && expenses.length === 0}
         selectedDate={selectedDayDate}
         periodTitle={periodTitle}
         onResetDateFilter={() => setSelectedDayDate(null)}
