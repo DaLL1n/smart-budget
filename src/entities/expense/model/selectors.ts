@@ -61,6 +61,19 @@ export function formatDayWeekday(dateStr: string): string {
 }
 
 /**
+ * Format ISO date string (YYYY-MM-DD) to numeric date "DD.MM.YY" (e.g. "07.09.26")
+ */
+export function formatDateDdMmYy(dateStr: string): string {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length < 3) return dateStr;
+  const year = parts[0].slice(-2);
+  const month = parts[1].padStart(2, '0');
+  const day = parts[2].padStart(2, '0');
+  return `${day}.${month}.${year}`;
+}
+
+/**
  * Format ISO date string (YYYY-MM-DD) to compact date with short month and year (e.g. "2 сен 2026")
  */
 export function formatShortDayMonthYear(dateStr: string): string {

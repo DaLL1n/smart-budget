@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { DailyBarItem, formatDayMonth, formatShortDay } from '../../../../entities/expense';
+import { DailyBarItem, formatDayMonth, formatShortDay, formatDateDdMmYy } from '../../../../entities/expense';
 import { formatRubles } from '../../../../entities/budget';
 import { defineChart, barY, ruleY } from '@tanstack/charts';
 import { scaleBand } from '@tanstack/charts/scales/band';
@@ -240,9 +240,9 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
                     ? 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border-slate-700/80 hover:border-slate-600'
                     : 'bg-slate-950/50 hover:bg-slate-900/60 text-slate-400 hover:text-slate-300 border-slate-800/70'
                 }`}
-                title={isSelected ? 'Снять выбор дня' : `Показать траты за ${item.dayLabel}`}
+                title={isSelected ? 'Снять выбор дня' : `Показать траты за ${formatDateDdMmYy(item.date)}`}
               >
-                <span>{item.dayLabel}</span>
+                <span>{formatDateDdMmYy(item.date)}</span>
                 {item.amount > 0 ? (
                   <span
                     className={`font-semibold shrink-0 ${

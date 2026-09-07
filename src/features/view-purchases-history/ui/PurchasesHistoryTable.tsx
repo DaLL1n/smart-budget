@@ -18,7 +18,7 @@ import {
 } from '@tanstack/react-table/legacy';
 import { flexRender } from '@tanstack/react-table';
 import { SortingState, PaginationState } from '@tanstack/table-core';
-import { Expense, EXPENSE_CATEGORIES, formatShortDayMonthYear } from '../../../entities/expense';
+import { Expense, EXPENSE_CATEGORIES, formatDateDdMmYy } from '../../../entities/expense';
 import { POPULAR_STORES } from '../../../entities/store';
 import { formatRubles } from '../../../entities/budget';
 import { FamilyMember } from '../../../entities/family';
@@ -105,7 +105,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
         header: 'Дата',
         cell: info => (
           <span className="font-mono text-xs text-slate-300 whitespace-nowrap">
-            {formatShortDayMonthYear(info.getValue())}
+            {formatDateDdMmYy(info.getValue())}
           </span>
         ),
       }),
@@ -248,7 +248,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
           </h3>
           {selectedDate && (
             <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-mono">
-              <span>{formatShortDayMonthYear(selectedDate)}</span>
+              <span>{formatDateDdMmYy(selectedDate)}</span>
               {onResetDateFilter && (
                 <button
                   type="button"
@@ -456,7 +456,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-slate-400">Дата:</span>
                 <span className="text-xs font-mono text-slate-300">
-                  {formatShortDayMonthYear(expenseToDelete.date)}
+                  {formatDateDdMmYy(expenseToDelete.date)}
                 </span>
               </div>
               <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
