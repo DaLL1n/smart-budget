@@ -5,13 +5,8 @@
   - result: 0 errors
 - production_build:
   - command: npm run build (vite build)
-  - result: 0 errors, build completed in 7.91s
+  - result: 0 errors, build completed in 9.96s
 - verification_scope:
-  - Native Mobile Scrollbar Hidden: на экранах pointer: coarse / hover: none / <= 768px нативный скроллбар скрыт
-  - MobileScrollIndicator:
-    - Прижат к правому краю: right: 1.5px, тонкий капсюль (w: 2.5px), скругление rounded-full
-    - Появление по требованию: в покое opacity: 0, при скролле opacity: 1
-    - Автозатухание: плавный fade-out через 850 мс после прекращения скролла
-    - Расчет пропорций: высота ползунка адаптируется под размер контента (min 32px), позиционирование через GPU translate3d
-    - Учет safe area: env(safe-area-inset-top) и env(safe-area-inset-bottom)
-  - Desktop Stability: на десктопах с мышью кастомный мобильный индикатор скрыт (md:hidden), системный скроллбар работает штатно
+  - Pure CSS Smooth Scroll: отсутствие JS-слушателей скролла, нулевые накладные расходы на CPU
+  - Native Mobile Scrollbars Restored: на мобильных платформах (iOS, Android, Samsung Internet) отображаются системные дефолтные скроллбары
+  - Clean Bundle: компонент MobileScrollIndicator удален из дерева сборки

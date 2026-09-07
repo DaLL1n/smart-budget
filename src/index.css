@@ -189,25 +189,8 @@ body,
   transition: background-color 0.2s ease;
 }
 
-/* Mobile touch devices & phones: completely hide default native browser scrollbars for html and body */
-@media (pointer: coarse), (hover: none), (max-width: 768px) {
-  html,
-  body {
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-  }
-
-  html::-webkit-scrollbar,
-  body::-webkit-scrollbar,
-  html *::-webkit-scrollbar-button,
-  body *::-webkit-scrollbar-button {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-    background: transparent !important;
-  }
-
-  /* Inner scroll containers stay functional with thin neutral bar */
+/* Touch devices & mobile: ensure inner custom scroll containers remain functional */
+@media (pointer: coarse), (hover: none) {
   .custom-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: rgba(148, 163, 184, 0.35) rgba(15, 23, 42, 0.4);
