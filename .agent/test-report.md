@@ -5,8 +5,9 @@
   - result: 0 errors
 - production_build:
   - command: npm run build (vite build)
-  - result: 0 errors, build completed in 9.96s
+  - result: 0 errors, build completed successfully in 6.15s
 - verification_scope:
-  - Pure CSS Smooth Scroll: отсутствие JS-слушателей скролла, нулевые накладные расходы на CPU
-  - Native Mobile Scrollbars Restored: на мобильных платформах (iOS, Android, Samsung Internet) отображаются системные дефолтные скроллбары
-  - Clean Bundle: компонент MobileScrollIndicator удален из дерева сборки
+  - Mobile Hierarchy: Hero-блок бюджета занимает в 2 раза меньше высоты экрана на 375px
+  - Unified Member Cards: карточки участников содержат аватары, роли, суммы трат и полосы процента от семейного бюджета
+  - De-duplication: устранен дублирующий блок распределения трат
+  - Expandable Add Member: кнопка добавления разворачивает форму и сворачивается обратно по кнопке «Закрыть»

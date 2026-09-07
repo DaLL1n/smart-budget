@@ -9,7 +9,8 @@ import {
   Tag, 
   PieChart,
   ShieldCheck,
-  Zap
+  Zap,
+  UserPlus
 } from 'lucide-react';
 import { useStore } from '@tanstack/react-store';
 import { useAuth } from '../../../entities/user';
@@ -22,6 +23,7 @@ import { FamilyMemberList } from '../../../features/manage-family-membership';
 
 export const FamilySpaceWidget: React.FC = () => {
   const { currentUser, refreshUser, isLoading: isAuthLoading } = useAuth();
+  const [isAddOpen, setIsAddOpen] = useState<boolean>(false);
   const storeFamily = useStore(familyStore, (s) => s.currentFamily);
   const { data: queryFamily, isLoading: isQueryLoading, refetch, isFetching } = useFamilyQuery(currentUser?.familyId);
 
@@ -191,74 +193,74 @@ export const FamilySpaceWidget: React.FC = () => {
   const familyStores = POPULAR_STORES.filter(s => currentUser?.profile?.favoriteStores?.includes(s.id));
 
   return (
-    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in max-w-4xl mx-auto">
       
-      {/* Header Banner Card */}
-      <div className="p-4 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800/80 shadow-2xl relative overflow-hidden">
+      {/* 1. Header Banner Card (Hero / Quick Status) */}
+      <div className="p-4 sm:p-7 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800/80 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center justify-between gap-4 relative z-10">
+          <div className="space-y-1 min-w-0">
+            <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                 <Users className="w-3 h-3" />
                 <span>Семейный бюджет</span>
               </span>
+              <span className="text-[11px] text-slate-400">
+                {activeFamily.members.length} {activeFamily.members.length === 1 ? 'участник' : activeFamily.members.length < 5 ? 'участника' : 'участников'}
+              </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate">
               Семейное пространство
             </h1>
-            <p className="text-xs text-slate-400">
-              <span>{activeFamily.members.length} {activeFamily.members.length === 1 ? 'участник' : activeFamily.members.length < 5 ? 'участника' : 'участников'}</span>
-            </p>
           </div>
 
           {/* Quick Actions */}
-          <div className="flex items-center gap-2 self-start md:self-auto">
-            <button
-              type="button"
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="px-3.5 py-2 rounded-xl bg-slate-950/70 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
-              title="Обновить данные"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin text-emerald-400' : ''}`} />
-              <span className="hidden sm:inline">Обновить</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="px-3 py-1.5 rounded-xl bg-slate-950/70 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+            title="Обновить данные"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin text-emerald-400' : ''}`} />
+            <span className="hidden sm:inline">Обновить</span>
+          </button>
         </div>
 
-        {/* Family Budget Progress Summary */}
-        <div className="mt-6 pt-6 border-t border-slate-800/70 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 rounded-2xl bg-slate-950/50 border border-slate-800/80 space-y-1">
-            <div className="text-[11px] text-slate-400 font-medium">Общий бюджет месяца</div>
-            <div className="text-lg font-bold text-white font-mono">{formatRubles(monthlyBudget)}</div>
-            <div className="text-[10px] text-slate-500">Лимит на всех участников</div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-950/50 border border-slate-800/80 space-y-1">
-            <div className="text-[11px] text-slate-400 font-medium">Потрачено семьей</div>
-            <div className="text-lg font-bold text-emerald-400 font-mono">{formatRubles(totalFamilySpent)}</div>
-            <div className="text-[10px] text-slate-500">{percentUsed}% от общего лимита</div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-950/50 border border-slate-800/80 space-y-1">
-            <div className="text-[11px] text-slate-400 font-medium">Остаток средств</div>
-            <div className={`text-lg font-bold font-mono ${remainingBudget > 0 ? 'text-teal-300' : 'text-rose-400'}`}>
+        {/* Highlight Remaining Budget & Key Metrics */}
+        <div className="mt-4 pt-4 border-t border-slate-800/70 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-6">
+          <div className="space-y-0.5">
+            <div className="text-[11px] text-slate-400 font-medium">Остаток средств семьи:</div>
+            <div className={`text-2xl sm:text-3xl font-black font-mono tracking-tight ${remainingBudget > 0 ? 'text-teal-300' : 'text-rose-400'}`}>
               {formatRubles(remainingBudget)}
             </div>
-            <div className="text-[10px] text-slate-500">До конца расчетного периода</div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-3 sm:gap-6 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/60 text-xs">
+            <div className="space-y-0.5">
+              <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Потрачено семьей</div>
+              <div className="text-sm sm:text-base font-bold text-emerald-400 font-mono">
+                {formatRubles(totalFamilySpent)}
+              </div>
+            </div>
+            <div className="space-y-0.5">
+              <div className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Общий лимит</div>
+              <div className="text-sm sm:text-base font-bold text-white font-mono">
+                {formatRubles(monthlyBudget)}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="mt-4 space-y-1.5">
+        <div className="mt-3.5 space-y-1.5">
           <div className="flex items-center justify-between text-[11px] text-slate-400">
             <span>Расход бюджета</span>
             <span className="font-mono font-bold text-slate-200">{percentUsed}%</span>
           </div>
-          <div className="w-full h-2.5 rounded-full bg-slate-950 overflow-hidden p-0.5 border border-slate-800">
+          <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden p-0.5 border border-slate-800">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
                 percentUsed > 90
@@ -271,126 +273,105 @@ export const FamilySpaceWidget: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Grid: Left (Members & Stats) + Right (Add form & Info) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Left Column (7 cols): Member List & Contribution Breakdown */}
-        <div className="lg:col-span-7 space-y-6">
-          <FamilyMemberList 
-            currentUser={currentUser} 
-            family={activeFamily}
-            onFamilyUpdated={(updatedFamily) => {
-              familyStore.setState((s) => ({ ...s, currentFamily: updatedFamily }));
-              refreshUser();
-              refetch();
-            }}
-          />
+      {/* 2. Family Members List with Integrated Spending Bars */}
+      <div className="space-y-3">
+        <FamilyMemberList 
+          currentUser={currentUser} 
+          family={activeFamily}
+          totalFamilySpent={totalFamilySpent}
+          onFamilyUpdated={(updatedFamily) => {
+            familyStore.setState((s) => ({ ...s, currentFamily: updatedFamily }));
+            refreshUser();
+            refetch();
+          }}
+        />
 
-          {/* Member Spending Distribution Chart */}
-          <div className="p-5 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                <PieChart className="w-4 h-4 text-emerald-400" />
-                <span>Распределение расходов</span>
-              </h3>
-              <span className="text-[11px] text-slate-400 font-mono">Текущий месяц</span>
-            </div>
-
-            <div className="space-y-3">
-              {activeFamily.members.map((member) => {
-                const memberSpent = member.monthlySpent || 0;
-                const memberPercent = totalFamilySpent > 0 ? Math.round((memberSpent / totalFamilySpent) * 100) : 0;
-
-                return (
-                  <div key={member.userId} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2">
-                        <span>{member.avatar || '🥑'}</span>
-                        <span className="font-semibold text-slate-200">{member.name}</span>
-                      </div>
-                      <div className="font-mono text-slate-300">
-                        {formatRubles(memberSpent)} <span className="text-slate-500">({memberPercent}%)</span>
-                      </div>
-                    </div>
-                    <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-emerald-400 transition-all duration-300"
-                        style={{ width: `${memberPercent}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+        {/* 3. Collapsible Add Member Action */}
+        {!isAddOpen ? (
+          <button
+            type="button"
+            onClick={() => setIsAddOpen(true)}
+            className="w-full py-3 px-4 rounded-2xl border border-dashed border-slate-800 hover:border-emerald-500/50 bg-slate-950/40 hover:bg-emerald-950/20 text-slate-300 hover:text-emerald-300 text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer group shadow-sm"
+          >
+            <UserPlus className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <span>+ Пригласить нового участника в семью</span>
+          </button>
+        ) : (
+          <div className="relative animate-in fade-in zoom-in-95 duration-200">
+            <AddFamilyMemberForm 
+              currentUser={currentUser}
+              onMemberAdded={() => { refetch(); setIsAddOpen(false); }}
+              title="Добавить участника в семью"
+              subtitle="Введите Email родственника для прямого объединения бюджетов"
+            />
+            <button
+              type="button"
+              onClick={() => setIsAddOpen(false)}
+              className="absolute top-5 right-5 text-xs text-slate-400 hover:text-slate-200 px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 transition-colors cursor-pointer"
+            >
+              Закрыть
+            </button>
           </div>
-        </div>
-
-        {/* Right Column (5 cols): Direct Add form + Preferences */}
-        <div className="lg:col-span-5 space-y-6">
-          <AddFamilyMemberForm 
-            currentUser={currentUser}
-            onMemberAdded={() => { refetch(); }}
-            title="Добавить еще участника"
-            subtitle="Введите Email родственника для прямого добавления в семью"
-          />
-
-          {/* Preferences and Goals Summary */}
-          <div className="p-5 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-xl space-y-4">
-            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-              <Tag className="w-4 h-4 text-teal-400" />
-              <span>Цели и предпочтения семьи</span>
-            </h3>
-
-            <div className="space-y-3 text-xs">
-              {familyGoals.length > 0 && (
-                <div>
-                  <div className="text-[11px] text-slate-400 mb-1.5">Приоритетные финансовые цели:</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {familyGoals.map((g) => (
-                      <span key={g.id} className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center gap-1">
-                        <span>{g.icon}</span>
-                        <span>{g.title}</span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {familyDiets.length > 0 && (
-                <div>
-                  <div className="text-[11px] text-slate-400 mb-1.5">Диетические предпочтения:</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {familyDiets.map((d) => (
-                      <span key={d.id} className="px-2.5 py-1 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-300 text-xs flex items-center gap-1">
-                        <span>{d.icon}</span>
-                        <span>{d.label}</span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {familyStores.length > 0 && (
-                <div>
-                  <div className="text-[11px] text-slate-400 mb-1.5">Регулярные магазины семьи:</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {familyStores.map((s) => (
-                      <span key={s.id} className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 text-xs flex items-center gap-1.5">
-                        <span 
-                          className="w-2 h-2 rounded-full shrink-0" 
-                          style={{ backgroundColor: s.color }} 
-                        />
-                        <span>{s.name}</span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
+        )}
       </div>
+
+      {/* 4. Preferences and Goals Summary */}
+      {(familyGoals.length > 0 || familyDiets.length > 0 || familyStores.length > 0) && (
+        <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-xl space-y-3">
+          <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+            <Tag className="w-3.5 h-3.5 text-teal-400" />
+            <span>Цели и предпочтения семьи</span>
+          </h3>
+
+          <div className="space-y-3 text-xs">
+            {familyGoals.length > 0 && (
+              <div>
+                <div className="text-[11px] text-slate-400 mb-1.5">Приоритетные финансовые цели:</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {familyGoals.map((g) => (
+                    <span key={g.id} className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center gap-1">
+                      <span>{g.icon}</span>
+                      <span>{g.title}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {familyDiets.length > 0 && (
+              <div>
+                <div className="text-[11px] text-slate-400 mb-1.5">Диетические предпочтения:</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {familyDiets.map((d) => (
+                    <span key={d.id} className="px-2.5 py-1 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-300 text-xs flex items-center gap-1">
+                      <span>{d.icon}</span>
+                      <span>{d.label}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {familyStores.length > 0 && (
+              <div>
+                <div className="text-[11px] text-slate-400 mb-1.5">Регулярные магазины семьи:</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {familyStores.map((s) => (
+                    <span key={s.id} className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 text-xs flex items-center gap-1.5">
+                      <span 
+                        className="w-2 h-2 rounded-full shrink-0" 
+                        style={{ backgroundColor: s.color }} 
+                      />
+                      <span>{s.name}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

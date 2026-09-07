@@ -21,6 +21,7 @@ import { formatRubles } from '../../../entities/budget';
 interface FamilyMemberListProps {
   currentUser: User;
   family: Family;
+  totalFamilySpent?: number;
   onFamilyUpdated?: (family: Family | null) => void;
 }
 
@@ -29,6 +30,7 @@ type ModalType = 'leave' | 'remove' | null;
 export const FamilyMemberList: React.FC<FamilyMemberListProps> = ({
   currentUser,
   family,
+  totalFamilySpent: passedTotalSpent,
   onFamilyUpdated,
 }) => {
   const [processingUserId, setProcessingUserId] = useState<string | null>(null);
@@ -127,57 +129,79 @@ export const FamilyMemberList: React.FC<FamilyMemberListProps> = ({
             (!!member.email && !!currentUser.email && member.email.trim().toLowerCase() === currentUser.email.trim().toLowerCase());
           const isRemovingThis = removeMutation.isPending && processingUserId === member.userId;
 
+          const totalSpent = typeof passedTotalSpent === 'number'
+            ? passedTotalSpent
+            : family.members.reduce((acc, m) => acc + (m.monthlySpent || 0), 0);
+          const memberSpent = member.monthlySpent || 0;
+          const memberPercent = totalSpent > 0 ? Math.round((memberSpent / totalSpent) * 100) : 0;
+
           return (
             <div 
               key={member.userId}
-              className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+              className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-2.5 ${
                 isCurrent 
                   ? 'bg-gradient-to-r from-emerald-950/30 to-slate-900/80 border-emerald-500/30 shadow-sm' 
                   : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700/80'
               }`}
             >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${member.avatarColor || 'from-emerald-400 to-teal-500'} flex items-center justify-center text-lg shadow-md shrink-0 select-none`}>
-                  {member.avatar || '🥑'}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${member.avatarColor || 'from-emerald-400 to-teal-500'} flex items-center justify-center text-lg shadow-md shrink-0 select-none`}>
+                    {member.avatar || '🥑'}
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs sm:text-sm font-bold text-white truncate">
+                        {member.name}
+                      </span>
+                      {isCurrent ? (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold shrink-0">
+                          Вы
+                        </span>
+                      ) : (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 shrink-0">
+                          Участник
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-slate-400 font-mono truncate">{member.email}</div>
+                  </div>
                 </div>
 
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs sm:text-sm font-bold text-white truncate">
-                      {member.name}
-                    </span>
-                    {isCurrent ? (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold shrink-0">
-                        Вы
-                      </span>
+                {!isCurrent && (
+                  <button
+                    type="button"
+                    onClick={() => openRemoveModal(member)}
+                    disabled={isRemovingThis}
+                    className="p-2 rounded-xl bg-slate-950/70 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 border border-slate-800 hover:border-rose-900/60 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                    title={`Удалить ${member.name} из семьи`}
+                  >
+                    {isRemovingThis ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
                     ) : (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 shrink-0">
-                        Участник
-                      </span>
+                      <UserMinus className="w-4 h-4" />
                     )}
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-mono truncate">{member.email}</div>
-                  <div className="text-[10px] text-emerald-400/90 font-mono mt-0.5">
-                    Траты: {formatRubles(member.monthlySpent || 0)}
-                  </div>
-                </div>
+                  </button>
+                )}
               </div>
 
-              {!isCurrent && (
-                <button
-                  type="button"
-                  onClick={() => openRemoveModal(member)}
-                  disabled={isRemovingThis}
-                  className="p-2 rounded-xl bg-slate-950/70 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 border border-slate-800 hover:border-rose-900/60 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
-                  title={`Удалить ${member.name} из семьи`}
-                >
-                  {isRemovingThis ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
-                  ) : (
-                    <UserMinus className="w-4 h-4" />
-                  )}
-                </button>
-              )}
+              {/* Integrated spending bar & percentage */}
+              <div className="pt-2 border-t border-slate-800/60 space-y-1">
+                <div className="flex items-center justify-between text-[11px] font-mono">
+                  <span className="text-slate-400 text-[10px]">Траты за месяц:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-emerald-400">{formatRubles(memberSpent)}</span>
+                    <span className="text-slate-500 text-[10px]">({memberPercent}%)</span>
+                  </div>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
+                    style={{ width: `${memberPercent}%` }}
+                  />
+                </div>
+              </div>
             </div>
           );
         })}
