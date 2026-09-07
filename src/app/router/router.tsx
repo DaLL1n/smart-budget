@@ -20,6 +20,7 @@ import { AnalyticsPage } from '../../pages/analytics';
 import { TopNavbar, ActiveNavTab } from '../../widgets/top-navbar';
 import { EditBudgetModal } from '../../features/manage-budget';
 import { ErrorFallbackCard } from '../../features/error-fallback';
+import { AppShellSkeleton } from '../../shared/ui';
 
 const RootLayout: React.FC = () => {
   const { isAuthenticated, currentUser, isLoading, updateUserSettings } = useAuth();
@@ -28,14 +29,7 @@ const RootLayout: React.FC = () => {
   const navigate = useNavigate();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-          <span className="text-xs text-slate-400 font-mono">Загрузка данных...</span>
-        </div>
-      </div>
-    );
+    return <AppShellSkeleton />;
   }
 
   if (!isAuthenticated) {
