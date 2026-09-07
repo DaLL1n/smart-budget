@@ -71,6 +71,43 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
     }
   }, [orientation]);
 
+  const scrollStep = (direction: 'left' | 'right' | 'up' | 'down') => {
+    const el = innerRef.current;
+    if (!el) return;
+    const delta = orientation === 'vertical' ? el.clientHeight * 0.75 : el.clientWidth * 0.75;
+    if (direction === 'left') {
+      el.scrollBy({ left: -delta, behavior: 'smooth' });
+    } else if (direction === 'right') {
+      el.scrollBy({ left: delta, behavior: 'smooth' });
+    } else if (direction === 'up') {
+      el.scrollBy({ top: -delta, behavior: 'smooth' });
+    } else if (direction === 'down') {
+      el.scrollBy({ top: delta, behavior: 'smooth' });
+    }
+  };
+
+  const handleHorizontalTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = innerRef.current;
+    const track = e.currentTarget;
+    if (!el || !track) return;
+    const rect = track.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+    const targetScroll = ratio * (el.scrollWidth - el.clientWidth);
+    el.scrollTo({ left: targetScroll, behavior: 'smooth' });
+  };
+
+  const handleVerticalTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = innerRef.current;
+    const track = e.currentTarget;
+    if (!el || !track) return;
+    const rect = track.getBoundingClientRect();
+    const clickY = e.clientY - rect.top;
+    const ratio = Math.max(0, Math.min(1, clickY / rect.height));
+    const targetScroll = ratio * (el.scrollHeight - el.clientHeight);
+    el.scrollTo({ top: targetScroll, behavior: 'smooth' });
+  };
+
   useEffect(() => {
     const el = innerRef.current;
     if (!el) return;
@@ -99,11 +136,11 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
 
   return (
     <div className={`relative group/scroll ${className}`} {...rest}>
-      {/* The Scrollable Viewport */}
+      {/* The Scrollable Viewport: native built-in scrollbars are strictly hidden on all devices */}
       <div
         ref={innerRef}
         onScroll={updateScroll}
-        className={`custom-scrollbar ${
+        className={`no-native-scrollbar custom-scrollbar-viewport ${
           orientation === 'horizontal' 
             ? 'overflow-x-auto overflow-y-hidden' 
             : orientation === 'vertical'
@@ -116,16 +153,27 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
 
       {/* Subtle Horizontal Scrollbar Line with Light Indicator Arrows */}
       {(orientation === 'horizontal' || orientation === 'both') && hasHorizontalOverflow && (
-        <div className="flex items-center gap-1.5 pt-1.5 pb-0.5 px-1 w-full select-none" aria-hidden="true">
-          <ChevronLeft 
-            className={`w-3 h-3 shrink-0 transition-colors duration-200 ${
-              canScrollLeft ? 'text-slate-400' : 'text-slate-700/30'
-            }`} 
-          />
-          <div className="h-1 flex-1 bg-slate-800/60 rounded-full relative overflow-hidden">
+        <div className="flex items-center gap-1.5 pt-1.5 pb-0.5 px-0.5 w-full select-none" aria-hidden="true">
+          <button
+            type="button"
+            onClick={() => scrollStep('left')}
+            disabled={!canScrollLeft}
+            className="p-0.5 rounded text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+            title="Прокрутить влево"
+          >
+            <ChevronLeft 
+              className={`w-3 h-3 shrink-0 transition-colors duration-200 ${
+                canScrollLeft ? 'text-slate-400' : 'text-slate-700/30'
+              }`} 
+            />
+          </button>
+          <div 
+            onClick={handleHorizontalTrackClick}
+            className="h-1 flex-1 bg-slate-800/60 hover:bg-slate-800/90 rounded-full relative overflow-hidden cursor-pointer"
+          >
             <div 
               className={`absolute top-0 bottom-0 rounded-full transition-all duration-150 ${
-                canScrollRight || canScrollLeft ? 'bg-slate-400/60' : 'bg-slate-600/40'
+                canScrollRight || canScrollLeft ? 'bg-slate-400/60 hover:bg-emerald-400' : 'bg-slate-600/40'
               }`}
               style={{
                 left: `${scrollProgress.leftPercent}%`,
@@ -133,26 +181,45 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
               }}
             />
           </div>
-          <ChevronRight 
-            className={`w-3 h-3 shrink-0 transition-colors duration-200 ${
-              canScrollRight ? 'text-emerald-400/90' : 'text-slate-700/30'
-            }`} 
-          />
+          <button
+            type="button"
+            onClick={() => scrollStep('right')}
+            disabled={!canScrollRight}
+            className="p-0.5 rounded text-slate-500 hover:text-emerald-400 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+            title="Прокрутить вправо"
+          >
+            <ChevronRight 
+              className={`w-3 h-3 shrink-0 transition-colors duration-200 ${
+                canScrollRight ? 'text-emerald-400/90' : 'text-slate-700/30'
+              }`} 
+            />
+          </button>
         </div>
       )}
 
       {/* Subtle Vertical Scrollbar Line with Light Indicator Arrows */}
       {(orientation === 'vertical' || orientation === 'both') && hasVerticalOverflow && (
-        <div className="flex flex-col items-center gap-1 absolute right-0.5 top-2 bottom-2 w-2.5 pointer-events-none select-none z-10" aria-hidden="true">
-          <ChevronUp 
-            className={`w-2.5 h-2.5 shrink-0 transition-colors duration-200 ${
-              canScrollTop ? 'text-slate-400' : 'text-slate-700/30'
-            }`} 
-          />
-          <div className="w-0.5 flex-1 bg-slate-800/60 rounded-full relative overflow-hidden">
+        <div className="flex flex-col items-center gap-1 absolute right-0.5 top-2 bottom-2 w-2.5 select-none z-10" aria-hidden="true">
+          <button
+            type="button"
+            onClick={() => scrollStep('up')}
+            disabled={!canScrollTop}
+            className="p-0.5 rounded text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+            title="Прокрутить вверх"
+          >
+            <ChevronUp 
+              className={`w-2.5 h-2.5 shrink-0 transition-colors duration-200 ${
+                canScrollTop ? 'text-slate-400' : 'text-slate-700/30'
+              }`} 
+            />
+          </button>
+          <div 
+            onClick={handleVerticalTrackClick}
+            className="w-0.5 flex-1 bg-slate-800/60 hover:bg-slate-800/90 rounded-full relative overflow-hidden cursor-pointer"
+          >
             <div 
               className={`absolute left-0 right-0 rounded-full transition-all duration-150 ${
-                canScrollTop || canScrollBottom ? 'bg-slate-400/60' : 'bg-slate-600/40'
+                canScrollTop || canScrollBottom ? 'bg-slate-400/60 hover:bg-emerald-400' : 'bg-slate-600/40'
               }`}
               style={{
                 top: `${scrollProgress.topPercent}%`,
@@ -160,11 +227,19 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
               }}
             />
           </div>
-          <ChevronDown 
-            className={`w-2.5 h-2.5 shrink-0 transition-colors duration-200 ${
-              canScrollBottom ? 'text-emerald-400/90' : 'text-slate-700/30'
-            }`} 
-          />
+          <button
+            type="button"
+            onClick={() => scrollStep('down')}
+            disabled={!canScrollBottom}
+            className="p-0.5 rounded text-slate-500 hover:text-emerald-400 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+            title="Прокрутить вниз"
+          >
+            <ChevronDown 
+              className={`w-2.5 h-2.5 shrink-0 transition-colors duration-200 ${
+                canScrollBottom ? 'text-emerald-400/90' : 'text-slate-700/30'
+              }`} 
+            />
+          </button>
         </div>
       )}
     </div>

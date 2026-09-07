@@ -21,6 +21,36 @@
   padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
 }
 
+/* Strictly hide built-in/native browser scrollbars on all devices where custom scrollbar is used */
+.no-native-scrollbar,
+.custom-scrollbar-viewport {
+  -ms-overflow-style: none !important; /* IE & Edge */
+  scrollbar-width: none !important; /* Firefox */
+  -webkit-overflow-scrolling: touch;
+}
+
+.no-native-scrollbar::-webkit-scrollbar,
+.custom-scrollbar-viewport::-webkit-scrollbar,
+* .no-native-scrollbar::-webkit-scrollbar,
+* .custom-scrollbar-viewport::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+.no-native-scrollbar::-webkit-scrollbar-track,
+.custom-scrollbar-viewport::-webkit-scrollbar-track,
+.no-native-scrollbar::-webkit-scrollbar-thumb,
+.custom-scrollbar-viewport::-webkit-scrollbar-thumb,
+.no-native-scrollbar::-webkit-scrollbar-button,
+.custom-scrollbar-viewport::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
 /* Universal Custom Scrollbars: Fully rounded pill capsule ends, high-contrast, applied globally across the entire app */
 html,
 body,
