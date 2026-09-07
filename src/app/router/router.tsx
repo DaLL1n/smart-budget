@@ -81,7 +81,7 @@ const RootLayout: React.FC = () => {
       />
 
       {/* Main View Container with Outlet */}
-      <main id="app-main-view" className="flex-1 w-full max-w-[1440px] mx-auto px-2 sm:px-6 py-4 sm:py-6 pb-safe flex flex-col items-center">
+      <main id="app-main-view" className="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-safe flex flex-col items-center">
         <Outlet />
       </main>
 

@@ -27,6 +27,7 @@ import { formatRubles } from '../../../entities/budget';
 import { CategoryDonutChart } from '../../personal-analytics/ui/charts/CategoryDonutChart';
 import { DailyBarChart } from '../../personal-analytics/ui/charts/DailyBarChart';
 import { PurchasesHistoryTable } from '../../../features/view-purchases-history';
+import { ScrollContainer } from '../../../shared/ui';
 
 interface FamilyAnalyticsWidgetProps {
   currentUser: User;
@@ -274,7 +275,11 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
           <span>Фильтр по участнику:</span>
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto custom-scrollbar pb-1 sm:pb-0">
+        <ScrollContainer
+          orientation="horizontal"
+          className="w-full sm:w-auto min-w-0"
+          scrollClassName="flex items-center gap-1.5 pb-1 sm:pb-0"
+        >
           <button
             type="button"
             onClick={() => setSelectedMemberId('all')}
@@ -316,7 +321,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
               </button>
             );
           })}
-        </div>
+        </ScrollContainer>
       </div>
 
       {/* Charts Grid: 2 Equal Columns */}

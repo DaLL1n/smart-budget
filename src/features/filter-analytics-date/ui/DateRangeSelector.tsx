@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Calendar, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { DateFilterState, DatePeriod, formatDateIso } from '../../../entities/expense';
+import { ScrollContainer } from '../../../shared/ui';
 
 interface DateRangeSelectorProps {
   filter: DateFilterState;
@@ -61,7 +62,11 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 rounded-2xl bg-slate-900/90 border border-slate-800/80 backdrop-blur-xl shadow-lg">
       
       {/* Preset Pills */}
-      <div className="flex items-center justify-evenly gap-1 sm:gap-1.5 overflow-x-auto custom-scrollbar p-1 bg-slate-950/60 rounded-xl border border-slate-800/80 shrink-0">
+      <ScrollContainer
+        orientation="horizontal"
+        className="rounded-xl border border-slate-800/80 shrink-0"
+        scrollClassName="flex items-center justify-evenly gap-1 sm:gap-1.5 p-1 bg-slate-950/60"
+      >
         {periods.map((item) => {
           const isSelected = filter.period === item.id;
           return (
@@ -90,7 +95,7 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
             </button>
           );
         })}
-      </div>
+      </ScrollContainer>
 
       {/* Day Picker with Prev/Next step buttons */}
       <div className="flex items-center justify-center sm:justify-end gap-1.5 w-full sm:w-auto">

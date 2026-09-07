@@ -21,23 +21,25 @@
   padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
 }
 
-/* Custom Scrollbars: Cross-browser, responsive, and dynamic scroll illumination */
+/* Custom Scrollbars: Cross-browser, high-contrast, responsive, and dynamic scroll illumination */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(71, 85, 105, 0.3) transparent;
+  scrollbar-color: rgba(148, 163, 184, 0.45) rgba(15, 23, 42, 0.5);
   -webkit-overflow-scrolling: touch;
   transition: scrollbar-color 0.3s ease;
 }
 
 /* WebKit (Chrome, Edge, Safari iOS/macOS, Android Chrome, Samsung Internet) */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
+  display: block;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(15, 23, 42, 0.5);
   border-radius: 9999px;
+  border: 1px solid rgba(51, 65, 85, 0.25);
   transition: background-color 0.3s ease;
 }
 
@@ -46,29 +48,54 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.35);
+  background: rgba(148, 163, 184, 0.45);
   border-radius: 9999px;
+  border: 1px solid rgba(15, 23, 42, 0.4);
   transition: background-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Touch devices & phones: higher contrast and clear presence */
+@media (pointer: coarse), (hover: none) {
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.6) rgba(15, 23, 42, 0.65);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+    display: block;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(51, 65, 85, 0.4);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.65);
+    border: 1px solid rgba(15, 23, 42, 0.5);
+  }
 }
 
 /* Brighter active states: when hovered, focused, or actively scrolling */
 .custom-scrollbar:hover::-webkit-scrollbar-thumb,
 .custom-scrollbar:active::-webkit-scrollbar-thumb,
 .custom-scrollbar[data-scrolling="true"]::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.85) !important;
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.95) !important;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
 }
 
 .custom-scrollbar:hover::-webkit-scrollbar-track,
 .custom-scrollbar:active::-webkit-scrollbar-track,
 .custom-scrollbar[data-scrolling="true"]::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.35);
+  background: rgba(15, 23, 42, 0.75);
 }
 
 .custom-scrollbar:hover,
 .custom-scrollbar:active,
 .custom-scrollbar[data-scrolling="true"] {
-  scrollbar-color: rgba(16, 185, 129, 0.85) rgba(15, 23, 42, 0.35);
+  scrollbar-color: rgba(16, 185, 129, 0.95) rgba(15, 23, 42, 0.75);
 }
 
 @keyframes fadeIn {

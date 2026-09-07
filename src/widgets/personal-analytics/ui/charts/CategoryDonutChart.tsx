@@ -5,6 +5,7 @@ import { defineChart } from '@tanstack/charts';
 import { pie, polar, radialArc } from '@tanstack/charts/polar';
 import { tooltip } from '@tanstack/charts/tooltip';
 import { Chart } from '@tanstack/charts/react/tooltip';
+import { ScrollContainer } from '../../../../shared/ui';
 
 interface CategoryDonutChartProps {
   items: CategoryBreakdownItem[];
@@ -144,7 +145,11 @@ export const CategoryDonutChart: React.FC<CategoryDonutChartProps> = ({
       </div>
 
       {/* Legend & Breakdown List */}
-      <div className="flex-1 min-w-0 w-full space-y-2 max-h-[250px] overflow-y-auto custom-scrollbar pr-0.5">
+      <ScrollContainer
+        orientation="vertical"
+        className="flex-1 min-w-0 w-full"
+        scrollClassName="space-y-2 max-h-[250px] pr-0.5"
+      >
         {items.map((item) => {
           const isHovered = hoveredCategory?.category.id === item.category.id;
           return (
@@ -180,7 +185,7 @@ export const CategoryDonutChart: React.FC<CategoryDonutChartProps> = ({
             </div>
           );
         })}
-      </div>
+      </ScrollContainer>
     </div>
   );
 };

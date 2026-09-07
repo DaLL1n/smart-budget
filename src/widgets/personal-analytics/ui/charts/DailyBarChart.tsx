@@ -7,6 +7,7 @@ import { scaleBand } from '@tanstack/charts/scales/band';
 import { scaleLinear } from '@tanstack/charts/scales/linear';
 import { tooltip } from '@tanstack/charts/tooltip';
 import { Chart } from '@tanstack/charts/react/tooltip';
+import { ScrollContainer } from '../../../../shared/ui';
 
 export interface DailyBarChartProps {
   items: DailyBarItem[];
@@ -209,7 +210,11 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
 
       {/* Interactive Day Selection Chips for the Visible Window (only shown if period has 2 or more days) */}
       {items.length >= 2 && visibleItems.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-1">
+        <ScrollContainer
+          orientation="horizontal"
+          className="w-full"
+          scrollClassName="flex items-center gap-1.5 py-1"
+        >
           {visibleItems.map((item) => {
             const isSelected = selectedDate === item.date;
             return (
@@ -239,7 +244,7 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
               </button>
             );
           })}
-        </div>
+        </ScrollContainer>
       )}
 
       {/* Pagination Controls for 3-Day Sliding Window */}

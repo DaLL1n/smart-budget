@@ -22,6 +22,7 @@ import { Expense, EXPENSE_CATEGORIES, formatShortDayMonthYear } from '../../../e
 import { POPULAR_STORES } from '../../../entities/store';
 import { formatRubles } from '../../../entities/budget';
 import { FamilyMember } from '../../../entities/family';
+import { ScrollContainer } from '../../../shared/ui';
 
 export interface PurchasesHistoryTableProps {
   expenses: Expense[];
@@ -283,7 +284,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
           В этот период покупок не было
         </div>
       ) : (
-        <div className="overflow-x-auto custom-scrollbar">
+        <ScrollContainer orientation="horizontal" showHintBadge={true} className="w-full">
           <table className={`w-full ${isBuyerVisible ? 'min-w-[620px]' : 'min-w-[480px] sm:min-w-full'} table-fixed text-left border-collapse`}>
             {isBuyerVisible ? (
               <colgroup>
@@ -352,7 +353,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollContainer>
       )}
 
       {/* TanStack Table Pagination Controls */}
