@@ -211,7 +211,7 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
       {/* Interactive Day Selection Chips for the Visible Window (only shown if period has 2 or more days) */}
       {items.length >= 2 && visibleItems.length > 0 && (
         <div className="w-full">
-          <div className="flex items-stretch gap-1.5 sm:gap-2 py-1 w-full">
+          <div className="flex items-center gap-1.5 sm:gap-2 py-1 w-full">
             {visibleItems.map((item) => {
               const isSelected = selectedDate === item.date;
               return (
@@ -219,53 +219,35 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
                   key={item.date}
                   type="button"
                   onClick={() => onSelectDate?.(isSelected ? null : item.date)}
-                  className={`flex-1 min-w-0 px-2 sm:px-3 py-2 sm:py-2.5 rounded-xl font-mono text-[11px] sm:text-xs transition-all cursor-pointer flex flex-col sm:flex-row items-center justify-between gap-1 sm:gap-1.5 shadow-sm text-center sm:text-left ${
+                  className={`flex-1 min-w-0 px-2 sm:px-2.5 py-1.5 rounded-xl text-[11px] font-mono whitespace-nowrap transition-all cursor-pointer flex items-center justify-between gap-1.5 shadow-sm ${
                     isSelected
                       ? item.isOverLimit
-                        ? 'bg-rose-500/20 text-rose-100 font-bold border-2 border-rose-400 shadow-md shadow-rose-950/40 ring-1 ring-rose-400/30 scale-[1.01]'
-                        : 'bg-emerald-500/20 text-emerald-100 font-bold border-2 border-emerald-400 shadow-md shadow-emerald-950/40 ring-1 ring-emerald-400/30 scale-[1.01]'
+                        ? 'bg-rose-500/20 text-rose-100 font-bold border-2 border-rose-400 shadow-md shadow-rose-950/40 ring-1 ring-rose-400/30'
+                        : 'bg-emerald-500/20 text-emerald-100 font-bold border-2 border-emerald-400 shadow-md shadow-emerald-950/40 ring-1 ring-emerald-400/30'
                       : item.amount > 0
                       ? 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80 hover:border-slate-600'
                       : 'bg-slate-950/50 hover:bg-slate-900/60 text-slate-400 hover:text-slate-300 border border-slate-800/70'
                   }`}
                   title={isSelected ? 'Снять выбор дня' : `Показать траты за ${item.dayLabel}`}
                 >
-                  <div className="flex items-center gap-1.5 min-w-0 max-w-full truncate">
+                  <span className="truncate">{item.dayLabel}</span>
+                  {item.amount > 0 ? (
                     <span
-                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      className={`font-semibold shrink-0 ${
                         isSelected
                           ? item.isOverLimit
-                            ? 'bg-rose-300'
-                            : 'bg-emerald-300'
-                          : item.amount > 0
-                          ? item.isOverLimit
-                            ? 'bg-rose-400'
-                            : 'bg-emerald-400'
-                          : 'bg-slate-600/70'
+                            ? 'text-rose-200'
+                            : 'text-emerald-200'
+                          : item.isOverLimit
+                          ? 'text-rose-400'
+                          : 'text-emerald-400'
                       }`}
-                    />
-                    <span className="truncate">{item.dayLabel}</span>
-                  </div>
-
-                  <div className="shrink-0">
-                    {item.amount > 0 ? (
-                      <span
-                        className={`font-bold ${
-                          isSelected
-                            ? item.isOverLimit
-                              ? 'text-rose-200'
-                              : 'text-emerald-200'
-                            : item.isOverLimit
-                            ? 'text-rose-400'
-                            : 'text-emerald-400'
-                        }`}
-                      >
-                        {formatRubles(item.amount)}
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-500 font-normal">0 ₽</span>
-                    )}
-                  </div>
+                    >
+                      {formatRubles(item.amount)}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-500 shrink-0">0 ₽</span>
+                  )}
                 </button>
               );
             })}
