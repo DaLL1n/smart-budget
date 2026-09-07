@@ -352,8 +352,8 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
                 onPointerCancel={handleThumbPointerUpH}
                 className={`absolute -top-[0.5px] -bottom-[0.5px] rounded-full touch-none select-none ${
                   isDraggingH 
-                    ? 'bg-emerald-400 shadow-md shadow-emerald-500/50 ring-1 ring-emerald-400/40 cursor-grabbing transition-none' 
-                    : 'bg-slate-400/80 hover:bg-emerald-400/90 hover:shadow-sm cursor-grab transition-all duration-150'
+                    ? 'bg-emerald-400/90 shadow-[0_0_3px_rgba(16,185,129,0.25)] cursor-grabbing transition-none' 
+                    : 'bg-slate-400/80 hover:bg-slate-300 hover:shadow-none cursor-grab transition-all duration-150'
                 }`}
                 style={{
                   left: `${scrollProgress.leftPercent}%`,
@@ -418,8 +418,8 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
                 onPointerCancel={handleThumbPointerUpV}
                 className={`absolute -left-[0.5px] -right-[0.5px] rounded-full touch-none select-none ${
                   isDraggingV 
-                    ? 'bg-emerald-400 shadow-md shadow-emerald-500/50 ring-1 ring-emerald-400/40 cursor-grabbing transition-none' 
-                    : 'bg-slate-400/80 hover:bg-emerald-400/90 hover:shadow-sm cursor-grab transition-all duration-150'
+                    ? 'bg-emerald-400/90 shadow-[0_0_3px_rgba(16,185,129,0.25)] cursor-grabbing transition-none' 
+                    : 'bg-slate-400/80 hover:bg-slate-300 hover:shadow-none cursor-grab transition-all duration-150'
                 }`}
                 style={{
                   top: `${scrollProgress.topPercent}%`,

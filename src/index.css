@@ -208,11 +208,11 @@ body,
 :hover::-webkit-scrollbar-thumb,
 :active::-webkit-scrollbar-thumb,
 [data-scrolling="true"]::-webkit-scrollbar-thumb {
-  background-color: rgba(16, 185, 129, 0.95) !important;
+  background-color: rgba(16, 185, 129, 0.85) !important;
   border-radius: 9999px !important;
-  border: 1.5px solid transparent;
+  border: 1px solid transparent;
   background-clip: padding-box;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+  box-shadow: 0 0 3px rgba(16, 185, 129, 0.25);
 }
 
 *:hover::-webkit-scrollbar-track,

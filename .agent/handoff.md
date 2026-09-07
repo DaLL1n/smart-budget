@@ -2,9 +2,7 @@
 - source_agent: feature-developer
 - status: SUCCESS
 - artifacts_produced:
-  - src/pages/dashboard/ui/DashboardPage.tsx
-  - src/widgets/dashboard-overview/ui/DashboardOverview.tsx
-  - src/pages/family/ui/FamilyPage.tsx
-  - src/widgets/family-space/ui/FamilySpaceWidget.tsx
+  - src/shared/ui/scroll-container/ScrollContainer.tsx
+  - src/index.css
 - pending_tasks: []
-- blockers_or_notes: Для страниц «Дашборд» и «Семья» добавлена плавная анимация появления (animate-fade-in), идентичная странице «Аналитика». Переходы между всеми страницами приложения теперь происходят плавно и консистентно. tsc --noEmit и vite build завершились без ошибок.
+- blockers_or_notes: Свечение скроллбара при зажатии уменьшено в разы. В ScrollContainer удалены тяжелые ring и shadow-md, заменены на деликатное микро-свечение shadow-[0_0_3px_rgba(16,185,129,0.25)]. В index.css box-shadow уменьшен с 10px (0.6) до 3px (0.25). tsc --noEmit и vite build завершились без ошибок.

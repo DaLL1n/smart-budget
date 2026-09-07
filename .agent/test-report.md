@@ -5,8 +5,7 @@
   - result: 0 errors
 - production_build:
   - command: npm run build (vite build)
-  - result: 0 errors, build completed in 5.52s
+  - result: 0 errors, build completed in 8.22s
 - verification_scope:
-  - DashboardPage & DashboardOverview: применен animate-fade-in
-  - FamilyPage & FamilySpaceWidget: применен animate-fade-in
-  - Переходы Дашборд <-> Семья <-> Аналитика работают плавно и без скачков
+  - ScrollContainer: ползунок при зажатии имеет деликатное свечение shadow-[0_0_3px_rgba(16,185,129,0.25)]
+  - index.css: box-shadow уменьшен до 3px rgba(16, 185, 129, 0.25)
