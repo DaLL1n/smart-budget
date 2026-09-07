@@ -236,16 +236,6 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
             </span>
           ) : null}
         </div>
-
-        {selectedDate && onResetDateFilter && (
-          <button
-            type="button"
-            onClick={onResetDateFilter}
-            className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer font-medium self-start sm:self-auto"
-          >
-            Сбросить фильтр дня {typeof totalPeriodExpensesCount === 'number' && `(всего: ${totalPeriodExpensesCount})`}
-          </button>
-        )}
       </div>
 
       {/* Content: Skeleton / Empty / Table */}

@@ -199,8 +199,8 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
         />
       </div>
 
-      {/* Interactive Day Selection Chips for the Visible Window */}
-      {visibleItems.length > 0 && (
+      {/* Interactive Day Selection Chips for the Visible Window (only shown if period has 2 or more days) */}
+      {items.length >= 2 && visibleItems.length > 0 && (
         <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-1">
           {visibleItems.map((item) => {
             const isSelected = selectedDate === item.date;
