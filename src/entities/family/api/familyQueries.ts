@@ -34,8 +34,7 @@ export function useFamilyQuery(familyId?: string | null) {
       return undefined;
     },
     initialDataUpdatedAt: 0,
-    staleTime: 1000 * 10, // 10 seconds
-    refetchInterval: 8000,
+    staleTime: 1000 * 60, // 1 minute
     refetchOnWindowFocus: true,
     networkMode: 'offlineFirst',
   });

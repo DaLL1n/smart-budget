@@ -358,8 +358,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       )
       .subscribe();
 
-    // 4. Fallback Polling & Window Focus listener
-    const intervalId = setInterval(syncUserRemote, 4000);
+    // 4. Fallback Polling & Window Focus listener (rare background check, since WebSockets handle real-time)
+    const intervalId = setInterval(syncUserRemote, 60000);
 
     const onFocus = () => {
       syncUserRemote();
