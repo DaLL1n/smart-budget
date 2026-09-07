@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CategoryBreakdownItem } from '../../../../entities/expense';
+import { CategoryBreakdownItem, formatDateDdMmYy } from '../../../../entities/expense';
 import { formatRubles } from '../../../../entities/budget';
 import { defineChart } from '@tanstack/charts';
 import { pie, polar, radialArc } from '@tanstack/charts/polar';
@@ -10,11 +10,13 @@ import { ScrollContainer } from '../../../../shared/ui';
 interface CategoryDonutChartProps {
   items: CategoryBreakdownItem[];
   totalAmount: number;
+  selectedDate?: string | null;
 }
 
 export const CategoryDonutChart: React.FC<CategoryDonutChartProps> = ({
   items,
   totalAmount,
+  selectedDate,
 }) => {
   const [hoveredCategory, setHoveredCategory] = useState<CategoryBreakdownItem | null>(null);
 
@@ -63,7 +65,9 @@ export const CategoryDonutChart: React.FC<CategoryDonutChartProps> = ({
   if (items.length === 0 || totalAmount === 0 || !chartDefinition) {
     return (
       <div className="py-12 text-center text-xs text-slate-500">
-        Нет расходов по категориям за выбранный период
+        {selectedDate 
+          ? `Нет расходов по категориям за ${formatDateDdMmYy(selectedDate)}`
+          : 'Нет расходов по категориям за выбранный период'}
       </div>
     );
   }

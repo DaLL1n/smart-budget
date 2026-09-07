@@ -364,15 +364,6 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
         >
           <Trash2 className={`w-3.5 h-3.5 shrink-0 ${showDeleted ? 'text-rose-300' : 'text-slate-400'}`} />
           <span className="whitespace-nowrap">Удаленные товары</span>
-          {activeDeletedList.length > 0 && (
-            <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
-                showDeleted ? 'bg-rose-500/40 text-white' : 'bg-slate-700 text-slate-300'
-              }`}
-            >
-              {activeDeletedList.length}
-            </span>
-          )}
         </button>
       </div>
 

@@ -19,6 +19,7 @@ import {
   calculateCategoryBreakdown, 
   calculateDailyBarDistribution, 
   calculateStoreBreakdown,
+  formatDateDdMmYy,
   usePersonalExpensesQuery,
   usePersonalDeletedExpensesQuery,
   useExpensesRealtimeSubscription,
@@ -43,8 +44,8 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
   const { data: expenses = [], isLoading } = usePersonalExpensesQuery(currentUser.id);
   const { data: personalDeletedExpenses = [] } = usePersonalDeletedExpensesQuery(currentUser.id);
 
-  // Realtime instant live synchronization across active browser tabs & devices
-  useExpensesRealtimeSubscription(currentUser.familyId, currentUser.id);
+  // Subscribe to realtime changes in Supabase expenses table
+  useExpensesRealtimeSubscription(currentUser.familyId || null, currentUser.id);
 
   const deleteMutation = useDeleteExpenseMutation(currentUser.id, currentUser.familyId);
   const restoreMutation = useRestoreExpenseMutation(currentUser.id, currentUser.familyId);
@@ -81,30 +82,34 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
     return filterExpensesByDate(expenses, filter);
   }, [expenses, filter]);
 
-  // Data for the Purchase History Table:
+  // Data for the Purchase History Table and Category/Store breakdowns:
   // Synchronized with both date range filter and interactive chart date selection
-  const tableExpenses = useMemo(() => {
+  const currentViewExpenses = useMemo(() => {
     if (selectedDayDate) {
       return filtered.filter(e => e.date === selectedDayDate);
     }
     return filtered;
   }, [filtered, selectedDayDate]);
 
+  const currentViewSpent = useMemo(() => {
+    return currentViewExpenses.reduce((sum, e) => sum + e.amount, 0);
+  }, [currentViewExpenses]);
+
   const kpis = useMemo(() => {
     return calculatePersonalKPIs(filtered, monthlyBudget, daysInRange, periodTitle);
   }, [filtered, monthlyBudget, daysInRange, periodTitle]);
 
   const categoryBreakdown = useMemo(() => {
-    return calculateCategoryBreakdown(filtered);
-  }, [filtered]);
+    return calculateCategoryBreakdown(currentViewExpenses);
+  }, [currentViewExpenses]);
 
   const dailyBars = useMemo(() => {
     return calculateDailyBarDistribution(expenses, filter, dailyTarget);
   }, [expenses, filter, dailyTarget]);
 
   const storeRankings = useMemo(() => {
-    return calculateStoreBreakdown(filtered);
-  }, [filtered]);
+    return calculateStoreBreakdown(currentViewExpenses);
+  }, [currentViewExpenses]);
 
   if (isLoading && expenses.length === 0) {
     return <AnalyticsDashboardSkeleton isFamily={false} />;
@@ -229,14 +234,22 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
 
         {/* Category Breakdown Donut Chart */}
         <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4">
-          <div className="flex items-center gap-2">
-            <PieChart className="w-4 h-4 text-teal-400" />
-            <h3 className="text-sm font-bold text-slate-100">Категории продуктов</h3>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-teal-400" />
+              <h3 className="text-sm font-bold text-slate-100">Категории продуктов</h3>
+            </div>
+            {selectedDayDate && (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                {formatDateDdMmYy(selectedDayDate)}
+              </span>
+            )}
           </div>
 
           <CategoryDonutChart 
             items={categoryBreakdown} 
-            totalAmount={kpis.totalSpent} 
+            totalAmount={currentViewSpent} 
+            selectedDate={selectedDayDate}
           />
         </div>
 
@@ -275,7 +288,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
 
       {/* Unified Reusable Purchases History Table with Skeleton Support */}
       <PurchasesHistoryTable 
-        expenses={tableExpenses}
+        expenses={currentViewExpenses}
         deletedExpenses={personalDeletedExpenses}
         totalPeriodExpensesCount={filtered.length}
         isLoading={isLoading && expenses.length === 0}

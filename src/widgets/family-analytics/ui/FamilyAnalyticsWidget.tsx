@@ -19,6 +19,7 @@ import {
   calculateDailyBarDistribution, 
   calculateCategoryBreakdown,
   calculateStoreBreakdown,
+  formatDateDdMmYy,
   useFamilyExpensesQuery,
   useFamilyDeletedExpensesQuery,
   useExpensesRealtimeSubscription,
@@ -46,7 +47,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
   const { data: expenses = [], isLoading } = useFamilyExpensesQuery(family.id, memberIds);
   const { data: familyDeletedExpenses = [] } = useFamilyDeletedExpensesQuery(family.id, memberIds);
 
-  // Realtime instant live synchronization across active family members
+  // Subscribe to realtime changes in Supabase expenses table
   useExpensesRealtimeSubscription(family.id, currentUser.id);
 
   const deleteMutation = useDeleteExpenseMutation(currentUser.id, family.id);
@@ -90,23 +91,22 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
     return dateFilteredExpenses.filter(e => e.userId === selectedMemberId);
   }, [dateFilteredExpenses, selectedMemberId]);
 
-  // 3. Filter for Table (Synchronized with chart date selection)
-  const tableExpenses = useMemo(() => {
+  // 3. Current View Filter for Table, Categories, and Stores (Synchronized with chart date selection)
+  const currentViewExpenses = useMemo(() => {
     if (selectedDayDate) {
       return activeExpenses.filter(e => e.date === selectedDayDate);
     }
     return activeExpenses;
   }, [activeExpenses, selectedDayDate]);
 
+  const currentViewSpent = useMemo(() => {
+    return currentViewExpenses.reduce((sum, e) => sum + e.amount, 0);
+  }, [currentViewExpenses]);
+
   // Total Family Spend in Period
   const totalPeriodSpent = useMemo(() => {
     return dateFilteredExpenses.reduce((sum, e) => sum + e.amount, 0);
   }, [dateFilteredExpenses]);
-
-  // Active view spend (either all family or selected member)
-  const activeSpent = useMemo(() => {
-    return activeExpenses.reduce((sum, e) => sum + e.amount, 0);
-  }, [activeExpenses]);
 
   // Family Budget metrics
   const familyMonthlyBudget = family.monthlyBudget || 60000;
@@ -136,12 +136,12 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
   }, [activeExpenses, filter, familyDailyLimit]);
 
   const categoryBreakdown = useMemo(() => {
-    return calculateCategoryBreakdown(activeExpenses);
-  }, [activeExpenses]);
+    return calculateCategoryBreakdown(currentViewExpenses);
+  }, [currentViewExpenses]);
 
   const storeBreakdown = useMemo(() => {
-    return calculateStoreBreakdown(activeExpenses);
-  }, [activeExpenses]);
+    return calculateStoreBreakdown(currentViewExpenses);
+  }, [currentViewExpenses]);
 
   if (isLoading && expenses.length === 0) {
     return <AnalyticsDashboardSkeleton isFamily={true} />;
@@ -363,14 +363,22 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
 
         {/* Right: Category Donut Chart */}
         <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4">
-          <div className="flex items-center gap-2">
-            <PieChart className="w-4 h-4 text-teal-400" />
-            <h3 className="text-sm font-bold text-slate-100">Категории продуктов</h3>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-teal-400" />
+              <h3 className="text-sm font-bold text-slate-100">Категории продуктов</h3>
+            </div>
+            {selectedDayDate && (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                {formatDateDdMmYy(selectedDayDate)}
+              </span>
+            )}
           </div>
 
           <CategoryDonutChart
             items={categoryBreakdown}
-            totalAmount={activeSpent}
+            totalAmount={currentViewSpent}
+            selectedDate={selectedDayDate}
           />
         </div>
       </div>
@@ -408,7 +416,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
 
       {/* Unified Reusable Purchases History Table with Skeleton Support */}
       <PurchasesHistoryTable 
-        expenses={tableExpenses}
+        expenses={currentViewExpenses}
         deletedExpenses={familyDeletedExpenses}
         totalPeriodExpensesCount={activeExpenses.length}
         isLoading={isLoading && expenses.length === 0}
