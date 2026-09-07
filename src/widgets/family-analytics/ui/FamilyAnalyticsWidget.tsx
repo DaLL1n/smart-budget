@@ -8,7 +8,6 @@ import {
   ShoppingBag, 
   Sparkles, 
   ArrowDownRight, 
-  Filter, 
   CheckCircle2,
   Loader2
 } from 'lucide-react';
@@ -243,60 +242,109 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
         </div>
       </div>
 
-      {/* Member Filter Bar (Pills to slice analytics by person) */}
-      <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-300 uppercase tracking-wider">
-          <Filter className="w-4 h-4 text-emerald-400" />
-          <span>Фильтр по участнику:</span>
+      {/* Member Contributions Breakdown */}
+      <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-3">
+        <div className="flex items-center justify-between">
+          <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Вклад участников в общие траты</span>
+          </h4>
+          {selectedMemberId !== 'all' && (
+            <button
+              type="button"
+              onClick={() => setSelectedMemberId('all')}
+              className="text-xs text-emerald-400 hover:text-emerald-300 underline font-medium cursor-pointer transition-colors"
+            >
+              Показать всех
+            </button>
+          )}
         </div>
 
-        <ScrollContainer
-          orientation="horizontal"
-          className="w-full sm:w-auto min-w-0"
-          scrollClassName="flex items-center gap-1.5 pb-1 sm:pb-0"
-        >
-          <button
-            type="button"
-            onClick={() => setSelectedMemberId('all')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
-              selectedMemberId === 'all'
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                : 'bg-slate-950/60 text-slate-400 hover:text-white border border-slate-800'
-            }`}
+        {memberBreakdown.length > 3 ? (
+          <ScrollContainer
+            orientation="horizontal"
+            className="w-full min-w-0 pt-1"
+            scrollClassName="flex items-stretch gap-3 py-1"
           >
-            <Users className="w-3.5 h-3.5" />
-            <span>Вся семья</span>
-            <span className="text-[10px] font-mono px-1 rounded bg-slate-800 text-slate-300 ml-1">
-              {formatRubles(totalPeriodSpent)}
-            </span>
-          </button>
-
-          {family.members.map(member => {
-            const isSelected = selectedMemberId === member.userId;
-            const spent = dateFilteredExpenses
-              .filter(e => e.userId === member.userId)
-              .reduce((sum, e) => sum + e.amount, 0);
-
-            return (
-              <button
-                key={member.userId}
-                type="button"
-                onClick={() => setSelectedMemberId(member.userId)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
-                  isSelected
-                    ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-sm'
-                    : 'bg-slate-950/60 text-slate-400 hover:text-white border border-slate-800'
-                }`}
-              >
-                <span>{member.avatar || '🥑'}</span>
-                <span>{member.name}</span>
-                <span className="text-[10px] font-mono px-1 rounded bg-slate-800 text-slate-300 ml-1">
-                  {formatRubles(spent)}
-                </span>
-              </button>
-            );
-          })}
-        </ScrollContainer>
+            {memberBreakdown.map(({ member, spent, percent }) => {
+              const isSelected = selectedMemberId === member.userId;
+              return (
+                <button
+                  key={member.userId}
+                  type="button"
+                  onClick={() => setSelectedMemberId(isSelected ? 'all' : member.userId)}
+                  className={`w-[240px] sm:w-[260px] lg:w-[calc((100%-1.5rem)/3)] shrink-0 p-3 rounded-xl border space-y-2 flex flex-col justify-between text-left cursor-pointer transition-all duration-200 ${
+                    isSelected
+                      ? 'bg-emerald-500/15 border-emerald-500/50 shadow-md shadow-emerald-950/40 ring-1 ring-emerald-500/30'
+                      : 'bg-slate-950/60 hover:bg-slate-900/80 border-slate-800/80 hover:border-slate-700/80'
+                  }`}
+                  title={isSelected ? 'Сбросить фильтр по участнику' : `Фильтровать по участнику: ${member.name}`}
+                >
+                  <div className="flex items-center justify-between text-xs w-full">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-base shrink-0">{member.avatar || '🥑'}</span>
+                      <span className={`font-semibold truncate ${isSelected ? 'text-emerald-300' : 'text-slate-200'}`}>
+                        {member.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 font-mono shrink-0">
+                      <span className={`font-bold ${isSelected ? 'text-emerald-300' : 'text-slate-200'}`}>
+                        {formatRubles(spent)}
+                      </span>
+                      <span className="text-slate-500 text-[10px]">({percent}%)</span>
+                    </div>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                </button>
+              );
+            })}
+          </ScrollContainer>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            {memberBreakdown.map(({ member, spent, percent }) => {
+              const isSelected = selectedMemberId === member.userId;
+              return (
+                <button
+                  key={member.userId}
+                  type="button"
+                  onClick={() => setSelectedMemberId(isSelected ? 'all' : member.userId)}
+                  className={`p-3 rounded-xl border space-y-2 text-left cursor-pointer transition-all duration-200 ${
+                    isSelected
+                      ? 'bg-emerald-500/15 border-emerald-500/50 shadow-md shadow-emerald-950/40 ring-1 ring-emerald-500/30'
+                      : 'bg-slate-950/60 hover:bg-slate-900/80 border-slate-800/80 hover:border-slate-700/80'
+                  }`}
+                  title={isSelected ? 'Сбросить фильтр по участнику' : `Фильтровать по участнику: ${member.name}`}
+                >
+                  <div className="flex items-center justify-between text-xs w-full">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-base shrink-0">{member.avatar || '🥑'}</span>
+                      <span className={`font-semibold truncate ${isSelected ? 'text-emerald-300' : 'text-slate-200'}`}>
+                        {member.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 font-mono shrink-0">
+                      <span className={`font-bold ${isSelected ? 'text-emerald-300' : 'text-slate-200'}`}>
+                        {formatRubles(spent)}
+                      </span>
+                      <span className="text-slate-500 text-[10px]">({percent}%)</span>
+                    </div>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Charts Grid: 2 Equal Columns */}
@@ -330,74 +378,6 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
             totalAmount={activeSpent}
           />
         </div>
-      </div>
-
-      {/* Member Contributions Breakdown */}
-      <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-3">
-        <div className="flex items-center justify-between">
-          <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Вклад участников в общие траты</span>
-          </h4>
-        </div>
-
-        {memberBreakdown.length > 3 ? (
-          <ScrollContainer
-            orientation="horizontal"
-            className="w-full min-w-0 pt-1"
-            scrollClassName="flex items-stretch gap-3 py-1"
-          >
-            {memberBreakdown.map(({ member, spent, percent }) => (
-              <div
-                key={member.userId}
-                className="w-[240px] sm:w-[260px] lg:w-[calc((100%-1.5rem)/3)] shrink-0 p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2 flex flex-col justify-between"
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-base shrink-0">{member.avatar || '🥑'}</span>
-                    <span className="font-semibold text-slate-200 truncate">{member.name}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 font-mono shrink-0">
-                    <span className="text-slate-200 font-bold">{formatRubles(spent)}</span>
-                    <span className="text-slate-500 text-[10px]">({percent}%)</span>
-                  </div>
-                </div>
-                <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
-                    style={{ width: `${percent}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </ScrollContainer>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-            {memberBreakdown.map(({ member, spent, percent }) => (
-              <div
-                key={member.userId}
-                className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2"
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-base shrink-0">{member.avatar || '🥑'}</span>
-                    <span className="font-semibold text-slate-200 truncate">{member.name}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 font-mono shrink-0">
-                    <span className="text-slate-200 font-bold">{formatRubles(spent)}</span>
-                    <span className="text-slate-500 text-[10px]">({percent}%)</span>
-                  </div>
-                </div>
-                <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
-                    style={{ width: `${percent}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Stores Breakdown (Matches Рейтинг супермаркетов in Personal Analytics) */}
