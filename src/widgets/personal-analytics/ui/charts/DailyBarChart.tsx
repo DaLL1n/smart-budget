@@ -163,7 +163,7 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
       </div>
 
       {/* TanStack Charts Container */}
-      <div className="w-full h-48 bg-slate-950/40 rounded-xl p-2 border border-slate-800/60 overflow-hidden">
+      <div className="w-full h-48 bg-slate-950/40 rounded-xl p-2 border border-slate-800/60 overflow-hidden select-none [&_.ts-chart]:outline-none [&_.ts-chart-host]:outline-none [&_.ts-chart-surface]:outline-none [&_svg]:outline-none">
         <Chart
           definition={chartDefinition}
           height={175}

@@ -70,7 +70,7 @@ export const CategoryDonutChart: React.FC<CategoryDonutChartProps> = ({
   return (
     <div className="flex flex-col sm:flex-row items-center sm:items-start xl:items-center justify-between gap-5 sm:gap-6 w-full">
       {/* TanStack Polar Donut Chart Container */}
-      <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
+      <div className="relative w-44 h-44 shrink-0 flex items-center justify-center select-none [&_.ts-chart]:outline-none [&_.ts-chart-host]:outline-none [&_.ts-chart-surface]:outline-none [&_svg]:outline-none">
         <Chart
           definition={chartDefinition}
           height={176}

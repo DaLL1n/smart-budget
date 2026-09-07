@@ -77,6 +77,40 @@
   box-shadow: none !important;
 }
 
+/* TanStack Charts Focus Outline & Mobile Tap Highlight Removal */
+.ts-chart-host,
+.ts-chart-surface,
+.ts-chart,
+svg.ts-chart,
+.ts-chart-tooltip,
+.ts-chart-host *,
+.ts-chart-surface *,
+.ts-chart *,
+svg.ts-chart * {
+  outline: none !important;
+  outline-style: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.ts-chart-host:focus,
+.ts-chart-host:focus-visible,
+.ts-chart-host:focus-within,
+.ts-chart-surface:focus,
+.ts-chart-surface:focus-visible,
+.ts-chart-surface:focus-within,
+.ts-chart:focus,
+.ts-chart:focus-visible,
+.ts-chart:focus-within,
+svg.ts-chart:focus,
+svg.ts-chart:focus-visible,
+svg.ts-chart:focus-within,
+.ts-chart-tooltip:focus,
+.ts-chart-tooltip:focus-visible {
+  outline: none !important;
+  outline-style: none !important;
+  box-shadow: none !important;
+}
+
 /* Date input mobile normalization (iOS Safari, Samsung Internet, Android Chrome) */
 input[type="date"] {
   -webkit-appearance: none !important;
