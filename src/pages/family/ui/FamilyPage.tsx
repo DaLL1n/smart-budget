@@ -4,7 +4,7 @@ import { QueryErrorBoundary } from '../../../features/error-fallback';
 
 export const FamilyPage: React.FC = () => {
   return (
-    <div className="w-full">
+    <div className="w-full animate-fade-in">
       <QueryErrorBoundary
         variant="widget"
         title="Сбой в семейном пространстве"

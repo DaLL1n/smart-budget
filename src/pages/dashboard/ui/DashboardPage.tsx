@@ -4,7 +4,7 @@ import { QueryErrorBoundary } from '../../../features/error-fallback';
 
 export const DashboardPage: React.FC = () => {
   return (
-    <div className="w-full flex items-center justify-center">
+    <div className="w-full flex items-center justify-center animate-fade-in">
       <QueryErrorBoundary
         variant="widget"
         title="Сбой панели управления"

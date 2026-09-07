@@ -115,7 +115,7 @@ export const FamilySpaceWidget: React.FC = () => {
   // --- 1. NO FAMILY VIEW ---
   if (!family || family.members.length === 0) {
     return (
-      <div className="w-full max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <div className="w-full max-w-4xl mx-auto space-y-6 animate-fade-in">
         <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800/80 shadow-2xl relative overflow-hidden space-y-6">
           <div className="absolute top-0 right-0 -mt-10 -mr-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -191,7 +191,7 @@ export const FamilySpaceWidget: React.FC = () => {
   const familyStores = POPULAR_STORES.filter(s => currentUser?.profile?.favoriteStores?.includes(s.id));
 
   return (
-    <div className="w-full space-y-4 sm:space-y-6 animate-in fade-in duration-300">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       
       {/* Header Banner Card */}
       <div className="p-4 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800/80 shadow-2xl relative overflow-hidden">

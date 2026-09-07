@@ -5,7 +5,8 @@
   - result: 0 errors
 - production_build:
   - command: npm run build (vite build)
-  - result: 0 errors, build completed in 5.59s
+  - result: 0 errors, build completed in 5.52s
 - verification_scope:
-  - ScrollContainer: визуальная толщина трека h-[3px] (hover: h-1) и ползунка уменьшена в 2 раза.
-  - index.css: ширина и высота ::-webkit-scrollbar уменьшены с 8px до 4px.
+  - DashboardPage & DashboardOverview: применен animate-fade-in
+  - FamilyPage & FamilySpaceWidget: применен animate-fade-in
+  - Переходы Дашборд <-> Семья <-> Аналитика работают плавно и без скачков
