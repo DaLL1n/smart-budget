@@ -21,8 +21,10 @@ import { TopNavbar, ActiveNavTab } from '../../widgets/top-navbar';
 import { EditBudgetModal } from '../../features/manage-budget';
 import { ErrorFallbackCard } from '../../features/error-fallback';
 import { AppShellSkeleton } from '../../shared/ui';
+import { useSmoothScroll } from '../../shared/lib';
 
 const RootLayout: React.FC = () => {
+  useSmoothScroll();
   const { isAuthenticated, currentUser, isLoading, updateUserSettings } = useAuth();
   const isRestoring = useIsRestoring();
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);

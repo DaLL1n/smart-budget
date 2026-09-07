@@ -5,6 +5,10 @@
   - result: 0 errors
 - production_build:
   - command: npm run build (vite build)
-  - result: 0 errors, build completed in 11.67s
+  - result: 0 errors, build completed in 10.46s
 - verification_scope:
-  - PurchasesHistoryTable: в колонке категории убран ({exp.title}), отображается только иконка и лейбл категории
+  - useSmoothScroll: кинетическая плавная интерполяция колеса мыши для ПК без резких скачков
+  - Mobile & Touch devices: чистая нативная инерция GPU без блокировки тач-событий
+  - Inner scrollables: корректное делегирование прокрутки для внутренних элементов (таблицы, модалки)
+  - Accessibility: отключение кастомного сглаживания при prefers-reduced-motion: reduce
+  - CSS: overscroll-behavior-y: contain, overscroll-behavior-x: none, -webkit-overflow-scrolling: touch, touch-action: pan-y

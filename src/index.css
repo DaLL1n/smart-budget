@@ -16,6 +16,15 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overscroll-behavior-y: contain;
+    overscroll-behavior-x: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
   html, body {
     min-width: 375px;
     background-color: #090D16;
@@ -25,6 +34,25 @@
     -moz-osx-font-smoothing: grayscale;
     /* Respect iPhone Home Bar and Android/Samsung Gesture Pill Navigation */
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  body {
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* GPU Compositing optimization during fast scroll */
+  header,
+  [data-sticky="true"] {
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   body, button, input, select, textarea, h1, h2, h3, h4, h5, h6, p, span, div, a, label {
