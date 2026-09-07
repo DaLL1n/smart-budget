@@ -249,15 +249,6 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
             <Users className="w-3.5 h-3.5 text-emerald-400" />
             <span>Вклад участников в общие траты</span>
           </h4>
-          {selectedMemberId !== 'all' && (
-            <button
-              type="button"
-              onClick={() => setSelectedMemberId('all')}
-              className="text-xs text-emerald-400 hover:text-emerald-300 underline font-medium cursor-pointer transition-colors"
-            >
-              Показать всех
-            </button>
-          )}
         </div>
 
         {memberBreakdown.length > 3 ? (
