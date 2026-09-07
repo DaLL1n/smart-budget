@@ -5,8 +5,6 @@
   - result: 0 errors
 - production_build:
   - command: npm run build (vite build)
-  - result: 0 errors, build completed in 8.07s
+  - result: 0 errors, build completed in 11.67s
 - verification_scope:
-  - PersonalAnalyticsWidget: убран <span class="text-[10px] font-mono text-slate-400">за {daysInRange} ...</span>
-  - FamilyAnalyticsWidget: убран <span class="text-[10px] font-mono text-slate-400">за {daysInRange} ...</span>
-  - AnalyticsDashboardSkeleton: убран плейсхолдер периода в карточке 2
+  - PurchasesHistoryTable: в колонке категории убран ({exp.title}), отображается только иконка и лейбл категории

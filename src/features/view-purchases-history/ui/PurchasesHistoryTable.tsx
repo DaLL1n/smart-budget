@@ -203,11 +203,6 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
                 <span className="shrink-0">{cat.icon}</span>
                 <span className="truncate">{cat.label}</span>
               </span>
-              {exp.title && exp.title.toLowerCase() !== cat.label.toLowerCase() && (
-                <span className="text-xs text-slate-400 truncate hidden sm:inline" title={exp.title}>
-                  ({exp.title})
-                </span>
-              )}
             </div>
           );
         },
