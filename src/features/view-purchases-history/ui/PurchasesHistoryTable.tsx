@@ -318,13 +318,10 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
 
   const activeData = useMemo(() => {
     if (showDeleted) {
-      if (selectedDate) {
-        return activeDeletedList.filter(e => e.date === selectedDate);
-      }
       return activeDeletedList;
     }
     return expenses;
-  }, [showDeleted, activeDeletedList, expenses, selectedDate]);
+  }, [showDeleted, activeDeletedList, expenses]);
 
   const table = useLegacyTable({
     data: activeData,
