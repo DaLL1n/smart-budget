@@ -250,11 +250,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
         </div>
       ) : table.getRowModel().rows.length === 0 ? (
         <div className="py-12 text-center text-slate-500 text-xs">
-          {selectedDate 
-            ? `Нет зарегистрированных покупок за ${formatShortDayMonthYear(selectedDate)}`
-            : periodTitle 
-            ? `Нет зарегистрированных покупок за выбранный период (${periodTitle})`
-            : 'Нет зарегистрированных покупок'}
+          В этот период покупок не было
         </div>
       ) : (
         <div className="overflow-x-auto custom-scrollbar">
