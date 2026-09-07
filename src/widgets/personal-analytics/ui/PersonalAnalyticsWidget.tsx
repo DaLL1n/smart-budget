@@ -321,6 +321,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
         onDeleteExpense={handleDelete}
         deletingId={deletingId}
         currentUserId={currentUser.id}
+        showBuyer={false}
       />
 
     </div>

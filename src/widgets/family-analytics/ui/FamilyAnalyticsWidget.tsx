@@ -457,6 +457,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
         deletingId={deletingId}
         members={family.members}
         currentUserId={currentUser.id}
+        showBuyer={true}
       />
 
     </div>

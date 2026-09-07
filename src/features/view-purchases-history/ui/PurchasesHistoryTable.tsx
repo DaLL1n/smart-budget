@@ -33,6 +33,7 @@ export interface PurchasesHistoryTableProps {
   deletingId?: string | null;
   members?: FamilyMember[];
   currentUserId?: string;
+  showBuyer?: boolean;
   className?: string;
 }
 
@@ -47,8 +48,10 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
   deletingId,
   members = [],
   currentUserId,
+  showBuyer,
   className = '',
 }) => {
+  const isBuyerVisible = showBuyer !== undefined ? showBuyer : members.length > 0;
   const [sorting, setSorting] = useState<SortingState>([{ id: 'date', desc: true }]);
 
   const getInitialPageSize = () => {
@@ -82,116 +85,127 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
   }, [expenses.length, selectedDate]);
 
   const columnHelper = legacyCreateColumnHelper<Expense>();
-  const columns = useMemo(() => [
-    columnHelper.accessor('date', {
-      header: 'Дата',
-      cell: info => (
-        <span className="font-mono text-xs text-slate-300 whitespace-nowrap">
-          {formatShortDayMonthYear(info.getValue())}
-        </span>
-      ),
-    }),
-    columnHelper.accessor('userId', {
-      header: 'Кто купил',
-      cell: info => {
-        const uId = info.getValue();
-        const member = members.find(m => m.userId === uId);
-        const isCurrent = uId === currentUserId;
-        const displayName = member?.name || (isCurrent ? 'Вы' : 'Участник');
-        const avatar = member?.avatar || (isCurrent ? '🥑' : '👤');
-        const avatarColor = member?.avatarColor || 'from-emerald-400 to-teal-500';
+  const columns = useMemo(() => {
+    const cols: any[] = [
+      columnHelper.accessor('date', {
+        header: 'Дата',
+        cell: info => (
+          <span className="font-mono text-xs text-slate-300 whitespace-nowrap">
+            {formatShortDayMonthYear(info.getValue())}
+          </span>
+        ),
+      }),
+    ];
 
-        return (
-          <div className="flex items-center gap-2 min-w-0 whitespace-nowrap">
-            <span className={`w-5 h-5 rounded-md bg-gradient-to-br ${avatarColor} flex items-center justify-center text-[10px] shrink-0`}>
-              {avatar}
-            </span>
-            <span className="text-xs font-semibold text-slate-200 truncate">
-              {displayName}
-            </span>
-          </div>
-        );
-      },
-    }),
-    columnHelper.accessor('category', {
-      header: 'Категория',
-      cell: info => {
-        const exp = info.row.original;
-        const catId = info.getValue();
-        const cat = EXPENSE_CATEGORIES.find(c => c.id === catId) || EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1];
-        return (
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-300 whitespace-nowrap max-w-full">
-              <span className="shrink-0">{cat.icon}</span>
-              <span className="truncate">{cat.label}</span>
-            </span>
-            {exp.title && exp.title.toLowerCase() !== cat.label.toLowerCase() && (
-              <span className="text-xs text-slate-400 truncate hidden sm:inline" title={exp.title}>
-                ({exp.title})
+    if (isBuyerVisible) {
+      cols.push(
+        columnHelper.accessor('userId', {
+          header: 'Кто купил',
+          cell: info => {
+            const uId = info.getValue();
+            const member = members.find(m => m.userId === uId);
+            const isCurrent = uId === currentUserId;
+            const displayName = member?.name || (isCurrent ? 'Вы' : 'Участник');
+            const avatar = member?.avatar || (isCurrent ? '🥑' : '👤');
+            const avatarColor = member?.avatarColor || 'from-emerald-400 to-teal-500';
+
+            return (
+              <div className="flex items-center gap-2 min-w-0 whitespace-nowrap">
+                <span className={`w-5 h-5 rounded-md bg-gradient-to-br ${avatarColor} flex items-center justify-center text-[10px] shrink-0`}>
+                  {avatar}
+                </span>
+                <span className="text-xs font-semibold text-slate-200 truncate">
+                  {displayName}
+                </span>
+              </div>
+            );
+          },
+        })
+      );
+    }
+    cols.push(
+      columnHelper.accessor('category', {
+        header: 'Категория',
+        cell: info => {
+          const exp = info.row.original;
+          const catId = info.getValue();
+          const cat = EXPENSE_CATEGORIES.find(c => c.id === catId) || EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1];
+          return (
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-300 whitespace-nowrap max-w-full">
+                <span className="shrink-0">{cat.icon}</span>
+                <span className="truncate">{cat.label}</span>
               </span>
-            )}
-          </div>
-        );
-      },
-    }),
-    columnHelper.accessor('storeId', {
-      header: 'Магазин',
-      cell: info => {
-        const sId = info.getValue();
-        const storeObj = POPULAR_STORES.find(s => s.id === sId);
-        const storeColor = storeObj?.color || '#10b981';
-        return (
-          <div className="flex items-center gap-1.5 min-w-0 whitespace-nowrap">
-            <span
-              className="w-2 h-2 rounded-full shrink-0 shadow-sm"
-              style={{ backgroundColor: storeColor }}
-            />
-            <span className="text-xs text-slate-300 truncate">
-              {storeObj?.name || sId || 'Продуктовый'}
-            </span>
-          </div>
-        );
-      },
-    }),
-    columnHelper.accessor('amount', {
-      header: 'Сумма',
-      cell: info => (
-        <span className="font-mono font-bold text-xs text-emerald-400 whitespace-nowrap">
-          {formatRubles(info.getValue())}
-        </span>
-      ),
-    }),
-    columnHelper.display({
-      id: 'actions',
-      header: '',
-      cell: info => {
-        if (!onDeleteExpense) return null;
-        const exp = info.row.original;
-        const isDeleting = deletingId === exp.id;
-        return (
-          <div className="flex items-center justify-end">
-            <button
-              type="button"
-              disabled={isDeleting}
-              onClick={() => {
-                if (window.confirm('Удалить эту запись о расходе?')) {
-                  onDeleteExpense(exp.id);
-                }
-              }}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer disabled:opacity-40"
-              title="Удалить запись"
-            >
-              {isDeleting ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
-              ) : (
-                <Trash2 className="w-3.5 h-3.5" />
+              {exp.title && exp.title.toLowerCase() !== cat.label.toLowerCase() && (
+                <span className="text-xs text-slate-400 truncate hidden sm:inline" title={exp.title}>
+                  ({exp.title})
+                </span>
               )}
-            </button>
-          </div>
-        );
-      },
-    }),
-  ], [members, currentUserId, onDeleteExpense, deletingId]);
+            </div>
+          );
+        },
+      }),
+      columnHelper.accessor('storeId', {
+        header: 'Магазин',
+        cell: info => {
+          const sId = info.getValue();
+          const storeObj = POPULAR_STORES.find(s => s.id === sId);
+          const storeColor = storeObj?.color || '#10b981';
+          return (
+            <div className="flex items-center gap-1.5 min-w-0 whitespace-nowrap">
+              <span
+                className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+                style={{ backgroundColor: storeColor }}
+              />
+              <span className="text-xs text-slate-300 truncate">
+                {storeObj?.name || sId || 'Продуктовый'}
+              </span>
+            </div>
+          );
+        },
+      }),
+      columnHelper.accessor('amount', {
+        header: 'Сумма',
+        cell: info => (
+          <span className="font-mono font-bold text-xs text-emerald-400 whitespace-nowrap">
+            {formatRubles(info.getValue())}
+          </span>
+        ),
+      }),
+      columnHelper.display({
+        id: 'actions',
+        header: '',
+        cell: info => {
+          if (!onDeleteExpense) return null;
+          const exp = info.row.original;
+          const isDeleting = deletingId === exp.id;
+          return (
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => {
+                  if (window.confirm('Удалить эту запись о расходе?')) {
+                    onDeleteExpense(exp.id);
+                  }
+                }}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer disabled:opacity-40"
+                title="Удалить запись"
+              >
+                {isDeleting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </div>
+          );
+        },
+      })
+    );
+
+    return cols;
+  }, [isBuyerVisible, members, currentUserId, onDeleteExpense, deletingId]);
 
   const table = useLegacyTable({
     data: expenses,
@@ -254,15 +268,25 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
         </div>
       ) : (
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full min-w-[620px] table-fixed text-left border-collapse">
-            <colgroup>
-              <col className="w-[17%]" />
-              <col className="w-[19%]" />
-              <col className="w-[26%]" />
-              <col className="w-[18%]" />
-              <col className="w-[14%]" />
-              <col className="w-[6%]" />
-            </colgroup>
+          <table className={`w-full ${isBuyerVisible ? 'min-w-[620px]' : 'min-w-[520px]'} table-fixed text-left border-collapse`}>
+            {isBuyerVisible ? (
+              <colgroup>
+                <col className="w-[17%]" />
+                <col className="w-[19%]" />
+                <col className="w-[26%]" />
+                <col className="w-[18%]" />
+                <col className="w-[14%]" />
+                <col className="w-[6%]" />
+              </colgroup>
+            ) : (
+              <colgroup>
+                <col className="w-[20%]" />
+                <col className="w-[36%]" />
+                <col className="w-[22%]" />
+                <col className="w-[16%]" />
+                <col className="w-[6%]" />
+              </colgroup>
+            )}
             <thead>
               {table.getHeaderGroups().map(headerGroup => (
                 <tr key={headerGroup.id} className="border-b border-slate-800/80 text-[11px] text-slate-400 uppercase tracking-wider text-left">
