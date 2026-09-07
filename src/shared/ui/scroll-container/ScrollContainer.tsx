@@ -228,7 +228,7 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
 
       {/* Subtle Vertical Scrollbar Line with Light Indicator Arrows */}
       {(orientation === 'vertical' || orientation === 'both') && hasVerticalOverflow && (
-        <div className="flex flex-col items-center gap-1 absolute right-0.5 top-2 bottom-2 w-2.5 select-none z-10" aria-hidden="true">
+        <div className="flex flex-col items-center gap-1 absolute right-0.5 top-1.5 bottom-1.5 w-3 select-none z-10" aria-hidden="true">
           <button
             type="button"
             onClick={() => scrollStep('up')}
@@ -237,14 +237,14 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
             title="Прокрутить вверх"
           >
             <ChevronUp 
-              className={`w-2.5 h-2.5 shrink-0 transition-colors duration-200 ${
+              className={`w-3 h-3 shrink-0 transition-colors duration-200 ${
                 canScrollTop ? 'text-slate-400' : 'text-slate-700/30'
               }`} 
             />
           </button>
           <div 
             onClick={handleVerticalTrackClick}
-            className="w-0.5 flex-1 bg-slate-800/60 hover:bg-slate-800/90 rounded-full relative overflow-hidden cursor-pointer"
+            className="w-1 flex-1 bg-slate-800/60 hover:bg-slate-800/90 rounded-full relative overflow-hidden cursor-pointer"
           >
             <div 
               className={`absolute left-0 right-0 rounded-full transition-all duration-150 ${
@@ -264,7 +264,7 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
             title="Прокрутить вниз"
           >
             <ChevronDown 
-              className={`w-2.5 h-2.5 shrink-0 transition-colors duration-200 ${
+              className={`w-3 h-3 shrink-0 transition-colors duration-200 ${
                 canScrollBottom ? 'text-slate-400' : 'text-slate-700/30'
               }`} 
             />

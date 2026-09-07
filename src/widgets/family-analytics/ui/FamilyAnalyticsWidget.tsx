@@ -262,47 +262,49 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
 
         {memberBreakdown.length > 3 ? (
           <ScrollContainer
-            orientation="horizontal"
+            orientation="vertical"
             className="w-full min-w-0 pt-1"
-            scrollClassName="flex items-stretch gap-3 py-1"
+            scrollClassName="max-h-[224px] sm:max-h-[86px] pr-3.5 py-1"
           >
-            {memberBreakdown.map(({ member, spent, percent }) => {
-              const isSelected = selectedMemberId === member.userId;
-              return (
-                <button
-                  key={member.userId}
-                  type="button"
-                  onClick={() => setSelectedMemberId(isSelected ? 'all' : member.userId)}
-                  className={`w-[240px] sm:w-[260px] lg:w-[calc((100%-1.5rem)/3)] shrink-0 p-3 rounded-xl border space-y-2 flex flex-col justify-between text-left cursor-pointer transition-all duration-200 ${
-                    isSelected
-                      ? 'bg-emerald-500/15 border-emerald-500/50 shadow-md shadow-emerald-950/40 ring-1 ring-emerald-500/30'
-                      : 'bg-slate-950/60 hover:bg-slate-900/80 border-slate-800/80 hover:border-slate-700/80'
-                  }`}
-                  title={isSelected ? 'Сбросить фильтр по участнику' : `Фильтровать по участнику: ${member.name}`}
-                >
-                  <div className="flex items-center justify-between text-xs w-full">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-base shrink-0">{member.avatar || '🥑'}</span>
-                      <span className={`font-semibold truncate ${isSelected ? 'text-emerald-300' : 'text-slate-200'}`}>
-                        {member.name}
-                      </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {memberBreakdown.map(({ member, spent, percent }) => {
+                const isSelected = selectedMemberId === member.userId;
+                return (
+                  <button
+                    key={member.userId}
+                    type="button"
+                    onClick={() => setSelectedMemberId(isSelected ? 'all' : member.userId)}
+                    className={`p-3 rounded-xl border space-y-2 text-left cursor-pointer transition-all duration-200 ${
+                      isSelected
+                        ? 'bg-emerald-500/15 border-emerald-500/50 shadow-md shadow-emerald-950/40 ring-1 ring-emerald-500/30'
+                        : 'bg-slate-950/60 hover:bg-slate-900/80 border-slate-800/80 hover:border-slate-700/80'
+                    }`}
+                    title={isSelected ? 'Сбросить фильтр по участнику' : `Фильтровать по участнику: ${member.name}`}
+                  >
+                    <div className="flex items-center justify-between text-xs w-full">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-base shrink-0">{member.avatar || '🥑'}</span>
+                        <span className={`font-semibold truncate ${isSelected ? 'text-emerald-300' : 'text-slate-200'}`}>
+                          {member.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 font-mono shrink-0">
+                        <span className={`font-bold ${isSelected ? 'text-emerald-300' : 'text-slate-200'}`}>
+                          {formatRubles(spent)}
+                        </span>
+                        <span className="text-slate-500 text-[10px]">({percent}%)</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 font-mono shrink-0">
-                      <span className={`font-bold ${isSelected ? 'text-emerald-300' : 'text-slate-200'}`}>
-                        {formatRubles(spent)}
-                      </span>
-                      <span className="text-slate-500 text-[10px]">({percent}%)</span>
+                    <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
+                        style={{ width: `${percent}%` }}
+                      />
                     </div>
-                  </div>
-                  <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })}
+            </div>
           </ScrollContainer>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
