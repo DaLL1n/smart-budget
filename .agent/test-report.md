@@ -5,10 +5,13 @@
   - result: 0 errors
 - production_build:
   - command: npm run build (vite build)
-  - result: 0 errors, build completed in 10.46s
+  - result: 0 errors, build completed in 7.91s
 - verification_scope:
-  - useSmoothScroll: кинетическая плавная интерполяция колеса мыши для ПК без резких скачков
-  - Mobile & Touch devices: чистая нативная инерция GPU без блокировки тач-событий
-  - Inner scrollables: корректное делегирование прокрутки для внутренних элементов (таблицы, модалки)
-  - Accessibility: отключение кастомного сглаживания при prefers-reduced-motion: reduce
-  - CSS: overscroll-behavior-y: contain, overscroll-behavior-x: none, -webkit-overflow-scrolling: touch, touch-action: pan-y
+  - Native Mobile Scrollbar Hidden: на экранах pointer: coarse / hover: none / <= 768px нативный скроллбар скрыт
+  - MobileScrollIndicator:
+    - Прижат к правому краю: right: 1.5px, тонкий капсюль (w: 2.5px), скругление rounded-full
+    - Появление по требованию: в покое opacity: 0, при скролле opacity: 1
+    - Автозатухание: плавный fade-out через 850 мс после прекращения скролла
+    - Расчет пропорций: высота ползунка адаптируется под размер контента (min 32px), позиционирование через GPU translate3d
+    - Учет safe area: env(safe-area-inset-top) и env(safe-area-inset-bottom)
+  - Desktop Stability: на десктопах с мышью кастомный мобильный индикатор скрыт (md:hidden), системный скроллбар работает штатно

@@ -20,8 +20,7 @@
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    overscroll-behavior-y: contain;
-    overscroll-behavior-x: none;
+    overflow-x: clip;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -37,9 +36,7 @@
   }
 
   body {
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
+    overflow-x: clip;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -116,9 +113,8 @@ body,
 *::after,
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.45) rgba(15, 23, 42, 0.55);
+  scrollbar-color: rgba(148, 163, 184, 0.3) rgba(15, 23, 42, 0.4);
   -webkit-overflow-scrolling: touch;
-  transition: scrollbar-color 0.3s ease;
 }
 
 /* Light subtle chevron arrows directly on the scrollbar line */
@@ -131,52 +127,52 @@ body,
   background-position: center;
   width: 10px;
   height: 10px;
-  opacity: 0.55;
+  opacity: 0.4;
   transition: opacity 0.2s ease;
 }
 
 *::-webkit-scrollbar-button:single-button:hover,
 ::-webkit-scrollbar-button:single-button:hover {
-  opacity: 0.95;
+  opacity: 0.75;
 }
 
 /* Horizontal line: left arrow & right arrow */
 *::-webkit-scrollbar-button:single-button:horizontal:decrement,
 ::-webkit-scrollbar-button:single-button:horizontal:decrement {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-6-6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-6-6 6-6'/%3E%3C/svg%3E");
 }
 
 *::-webkit-scrollbar-button:single-button:horizontal:increment,
 ::-webkit-scrollbar-button:single-button:horizontal:increment {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
 }
 
 /* Vertical line: up arrow & down arrow */
 *::-webkit-scrollbar-button:single-button:vertical:decrement,
 ::-webkit-scrollbar-button:single-button:vertical:decrement {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m18 15-6-6-6 6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m18 15-6-6-6 6'/%3E%3C/svg%3E");
 }
 
 *::-webkit-scrollbar-button:single-button:vertical:increment,
 ::-webkit-scrollbar-button:single-button:vertical:increment {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 
 /* WebKit (Chrome, Edge, Safari iOS/macOS, Android Chrome, Samsung Internet) */
 *::-webkit-scrollbar,
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 3px;
+  height: 3px;
   display: block;
 }
 
 *::-webkit-scrollbar-track,
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.4);
   border-radius: 9999px !important;
-  margin: 1px 4px; /* Inset so track rounded caps are clearly visible and detached from box corners */
-  border: 1px solid rgba(51, 65, 85, 0.3);
-  transition: background-color 0.3s ease;
+  margin: 1px 4px;
+  border: 1px solid rgba(51, 65, 85, 0.15);
+  transition: background-color 0.2s ease;
 }
 
 *::-webkit-scrollbar-corner,
@@ -186,80 +182,77 @@ body,
 
 *::-webkit-scrollbar-thumb,
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(148, 163, 184, 0.5);
+  background-color: rgba(148, 163, 184, 0.3);
   border-radius: 9999px !important;
   border: 1px solid transparent;
-  background-clip: padding-box; /* Gives breathing room inside track creating a floating rounded pill */
-  transition: background-color 0.25s ease, box-shadow 0.25s ease;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
 }
 
-/* Touch devices & phones: higher contrast, larger hit-zone and perfectly rounded caps */
-@media (pointer: coarse), (hover: none) {
+/* Mobile touch devices & phones: completely hide default native browser scrollbars for html and body */
+@media (pointer: coarse), (hover: none), (max-width: 768px) {
   html,
-  body,
-  *,
-  *::before,
-  *::after,
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.65) rgba(15, 23, 42, 0.7);
+  body {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
   }
 
-  *::-webkit-scrollbar,
-  ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  html *::-webkit-scrollbar-button,
+  body *::-webkit-scrollbar-button {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
+
+  /* Inner scroll containers stay functional with thin neutral bar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.35) rgba(15, 23, 42, 0.4);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
     display: block;
   }
 
-  *::-webkit-scrollbar-track,
-  ::-webkit-scrollbar-track {
-    background: rgba(15, 23, 42, 0.7);
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.4);
     border-radius: 9999px !important;
     margin: 2px 6px;
-    border: 1px solid rgba(51, 65, 85, 0.4);
+    border: 1px solid rgba(51, 65, 85, 0.2);
   }
 
-  *::-webkit-scrollbar-thumb,
-  ::-webkit-scrollbar-thumb {
-    background-color: rgba(148, 163, 184, 0.65);
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.35);
     border-radius: 9999px !important;
-    border: 1.5px solid transparent;
+    border: 1px solid transparent;
     background-clip: padding-box;
   }
 }
 
-/* Brighter active states: when hovered, focused, or actively scrolling */
-*:hover::-webkit-scrollbar-thumb,
-*:active::-webkit-scrollbar-thumb,
-*[data-scrolling="true"]::-webkit-scrollbar-thumb,
-:hover::-webkit-scrollbar-thumb,
-:active::-webkit-scrollbar-thumb,
-[data-scrolling="true"]::-webkit-scrollbar-thumb {
-  background-color: rgba(16, 185, 129, 0.85) !important;
+/* Neutral states: consistent slate tone that remains stable and never glows during scrolling */
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active {
+  background-color: rgba(148, 163, 184, 0.45) !important;
   border-radius: 9999px !important;
   border: 1px solid transparent;
   background-clip: padding-box;
-  box-shadow: 0 0 3px rgba(16, 185, 129, 0.25);
+  box-shadow: none !important;
 }
 
-*:hover::-webkit-scrollbar-track,
-*:active::-webkit-scrollbar-track,
-*[data-scrolling="true"]::-webkit-scrollbar-track,
-:hover::-webkit-scrollbar-track,
-:active::-webkit-scrollbar-track,
-[data-scrolling="true"]::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.85);
+::-webkit-scrollbar-track:hover,
+::-webkit-scrollbar-track:active {
+  background: rgba(15, 23, 42, 0.45);
   border-radius: 9999px !important;
 }
 
-*:hover,
-*:active,
-*[data-scrolling="true"],
-:hover,
-:active,
-[data-scrolling="true"] {
-  scrollbar-color: rgba(16, 185, 129, 0.95) rgba(15, 23, 42, 0.85);
+.custom-scrollbar:hover,
+.custom-scrollbar:active {
+  scrollbar-color: rgba(148, 163, 184, 0.45) rgba(15, 23, 42, 0.45);
 }
 
 @keyframes fadeIn {

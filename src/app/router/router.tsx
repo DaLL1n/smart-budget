@@ -20,11 +20,9 @@ import { AnalyticsPage } from '../../pages/analytics';
 import { TopNavbar, ActiveNavTab } from '../../widgets/top-navbar';
 import { EditBudgetModal } from '../../features/manage-budget';
 import { ErrorFallbackCard } from '../../features/error-fallback';
-import { AppShellSkeleton } from '../../shared/ui';
-import { useSmoothScroll } from '../../shared/lib';
+import { AppShellSkeleton, MobileScrollIndicator } from '../../shared/ui';
 
 const RootLayout: React.FC = () => {
-  useSmoothScroll();
   const { isAuthenticated, currentUser, isLoading, updateUserSettings } = useAuth();
   const isRestoring = useIsRestoring();
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
@@ -72,6 +70,7 @@ const RootLayout: React.FC = () => {
   return (
     <div className="min-h-screen min-w-[375px] flex flex-col bg-slate-950 text-slate-100 selection:bg-emerald-500 selection:text-black animate-fade-in">
       <ScrollRestoration />
+      <MobileScrollIndicator />
       {/* Top Navigation Bar */}
       <TopNavbar
         activeTab={activeTab}
