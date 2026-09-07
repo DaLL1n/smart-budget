@@ -23,17 +23,8 @@ export function useFamilyQuery(familyId?: string | null) {
     queryKey: familyKeys.detail(familyId),
     queryFn: () => (familyId ? fetchFamily(familyId) : Promise.resolve(null)),
     enabled: !!familyId,
-    initialData: () => {
-      if (!familyId) return undefined;
-      try {
-        if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-          const cached = localStorage.getItem(`smart_budget_family_${familyId}`);
-          if (cached) return JSON.parse(cached) as Family;
-        }
-      } catch {}
-      return undefined;
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
     networkMode: 'offlineFirst',
   });

@@ -8,9 +8,61 @@ export const LOCAL_DELETED_EXPENSES_KEY = 'smart_budget_deleted_expenses';
 /**
  * Filter out legacy or synthetic seed mock expenses
  */
-function cleanExpenses(list: Expense[]): Expense[] {
-  return list.filter(e => e && !e.id.startsWith('seed_exp_'));
+export function cleanExpenses(list: Expense[]): Expense[] {
+  if (!Array.isArray(list)) return [];
+  return list.filter(e => e && typeof e.id === 'string' && !e.id.startsWith('seed_exp_') && !e.id.includes('seed'));
 }
+
+/**
+ * Proactively purges legacy mock/seed items and stale cached objects from localStorage
+ */
+export function purgeLegacyStorage(): void {
+  try {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
+    const keysToRemove: string[] = [];
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+
+      if (
+        key.startsWith(LOCAL_EXPENSES_KEY) || 
+        key.startsWith(LOCAL_DELETED_EXPENSES_KEY) || 
+        key.startsWith('smart_budget_family_')
+      ) {
+        const raw = localStorage.getItem(key);
+        if (raw && (raw.includes('seed_exp_') || raw.includes('seed_') || raw.includes('33373') || raw.includes('33696'))) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              const cleaned = cleanExpenses(parsed);
+              if (cleaned.length === 0) {
+                keysToRemove.push(key);
+              } else {
+                localStorage.setItem(key, JSON.stringify(cleaned));
+              }
+            } else {
+              keysToRemove.push(key);
+            }
+          } catch {
+            keysToRemove.push(key);
+          }
+        }
+      }
+    }
+
+    keysToRemove.forEach(k => {
+      try {
+        localStorage.removeItem(k);
+      } catch {}
+    });
+  } catch (e) {
+    console.warn('Error purging legacy storage:', e);
+  }
+}
+
+// Proactively run cleanup on module initialization
+purgeLegacyStorage();
 
 /**
  * Reads local cached expenses for a user, purging any legacy seeds

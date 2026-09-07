@@ -26,7 +26,7 @@ export const expenseQueryKeys = {
 
 /**
  * Hook to query active personal expenses.
- * Uses local cache as initialData only if real cached items exist; otherwise isLoading is true to show skeleton.
+ * Always triggers immediate fetch on mount to guarantee fresh Supabase data and show skeleton loader.
  */
 export function usePersonalExpensesQuery(userId?: string) {
   return useQuery({
@@ -35,13 +35,9 @@ export function usePersonalExpensesQuery(userId?: string) {
       if (!userId) return [];
       return fetchPersonalExpenses(userId);
     },
-    initialData: () => {
-      if (!userId) return undefined;
-      const local = getLocalExpenses(userId);
-      return local.length > 0 ? local : undefined;
-    },
     enabled: !!userId,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 }
@@ -56,20 +52,16 @@ export function usePersonalDeletedExpensesQuery(userId?: string) {
       if (!userId) return [];
       return fetchPersonalDeletedExpenses(userId);
     },
-    initialData: () => {
-      if (!userId) return undefined;
-      const local = getLocalDeletedExpenses(userId);
-      return local.length > 0 ? local : undefined;
-    },
     enabled: !!userId,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 0,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 }
 
 /**
  * Hook to query active family expenses.
- * Uses local cache as initialData only if real cached items exist; otherwise isLoading is true to show skeleton.
+ * Always triggers immediate fetch on mount to guarantee fresh Supabase data and show skeleton loader.
  */
 export function useFamilyExpensesQuery(familyId?: string | null, memberIds: string[] = []) {
   return useQuery({
@@ -78,13 +70,9 @@ export function useFamilyExpensesQuery(familyId?: string | null, memberIds: stri
       if (!familyId) return [];
       return fetchFamilyExpenses(familyId, memberIds);
     },
-    initialData: () => {
-      if (!familyId) return undefined;
-      const local = getLocalFamilyExpenses(familyId, memberIds);
-      return local.length > 0 ? local : undefined;
-    },
     enabled: !!familyId,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 }
@@ -99,13 +87,9 @@ export function useFamilyDeletedExpensesQuery(familyId?: string | null, memberId
       if (!familyId) return [];
       return fetchFamilyDeletedExpenses(familyId, memberIds);
     },
-    initialData: () => {
-      if (!familyId) return undefined;
-      const local = getLocalFamilyDeletedExpenses(familyId, memberIds);
-      return local.length > 0 ? local : undefined;
-    },
     enabled: !!familyId,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 0,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
   });
 }

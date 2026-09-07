@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   User as UserIcon, 
@@ -9,7 +9,7 @@ import {
   Lock 
 } from 'lucide-react';
 import { useAuth } from '../../../entities/user';
-import { useFamilyQuery, familyStore } from '../../../entities/family';
+import { useFamilyQuery, familyStore, familyActions } from '../../../entities/family';
 import { useStore } from '@tanstack/react-store';
 import { DateFilterState } from '../../../entities/expense';
 import { DateRangeSelector } from '../../../features/filter-analytics-date';
@@ -47,7 +47,13 @@ export const AnalyticsPage: React.FC = () => {
 
   const storeFamily = useStore(familyStore, (s) => s.currentFamily);
   const { data: queryFamily } = useFamilyQuery(currentUser?.familyId);
-  const family = currentUser?.familyId ? (storeFamily || queryFamily) : null;
+  const family = currentUser?.familyId ? (queryFamily || storeFamily) : null;
+
+  useEffect(() => {
+    if (queryFamily) {
+      familyActions.setFamily(queryFamily);
+    }
+  }, [queryFamily]);
 
   if (!currentUser) return null;
 

@@ -188,13 +188,23 @@ export async function fetchFamily(familyId: string): Promise<Family | null> {
       const raw = localStorage.getItem(`smart_budget_personal_expenses_v1_${uid}`);
       if (raw) {
         const list = JSON.parse(raw);
-        list.forEach((e: any) => {
-          if (e.date && e.date.startsWith(currentMonthPrefix)) {
-            if (!spentByMember.has(uid)) {
-              spentByMember.set(uid, (spentByMember.get(uid) || 0) + Number(e.amount || 0));
+        if (Array.isArray(list)) {
+          list.forEach((e: any) => {
+            if (
+              e &&
+              typeof e.id === 'string' &&
+              !e.id.startsWith('seed_exp_') &&
+              !e.id.includes('seed') &&
+              !e.deletedAt &&
+              e.date &&
+              e.date.startsWith(currentMonthPrefix)
+            ) {
+              if (!spentByMember.has(uid)) {
+                spentByMember.set(uid, (spentByMember.get(uid) || 0) + Number(e.amount || 0));
+              }
             }
-          }
-        });
+          });
+        }
       }
     });
   } catch {}

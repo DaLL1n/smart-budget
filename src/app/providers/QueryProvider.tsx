@@ -9,9 +9,10 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 1000 * 60 * 5, // 5 minutes
-            gcTime: 1000 * 60 * 60 * 24 * 7, // 7 days in IndexedDB cache
+            staleTime: 0, // Immediately fetch fresh data from server
+            gcTime: 1000 * 60 * 60 * 24, // 24 hours
             networkMode: 'offlineFirst',
+            refetchOnMount: 'always', // Always send query immediately when component mounts
             refetchOnWindowFocus: false,
             retry: 1,
           },
@@ -29,7 +30,7 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       persistOptions={{
         persister: indexedDbPersister,
         maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days cache retention
-        buster: 'smart-budget-v1',
+        buster: 'smart-budget-v4', // BUST old persisted client cache so clients on production purge mock data
       }}
     >
       {children}
