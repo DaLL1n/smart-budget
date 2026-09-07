@@ -133,39 +133,47 @@ export const FamilyMemberList: React.FC<FamilyMemberListProps> = ({
             ? passedTotalSpent
             : family.members.reduce((acc, m) => acc + (m.monthlySpent || 0), 0);
           const memberSpent = member.monthlySpent || 0;
-          const memberPercent = totalSpent > 0 ? Math.round((memberSpent / totalSpent) * 100) : 0;
+          const memberBudget = member.monthlyBudget || Math.round((family.monthlyBudget || 60000) / Math.max(1, family.members.length));
+          const isMemberOverBudget = memberSpent > memberBudget;
 
           return (
             <div 
               key={member.userId}
-              className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-2.5 ${
+              className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
                 isCurrent 
                   ? 'bg-gradient-to-r from-emerald-950/30 to-slate-900/80 border-emerald-500/30 shadow-sm' 
                   : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700/80'
               }`}
             >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${member.avatarColor || 'from-emerald-400 to-teal-500'} flex items-center justify-center text-lg shadow-md shrink-0 select-none`}>
-                    {member.avatar || '🥑'}
-                  </div>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-tr ${member.avatarColor || 'from-emerald-400 to-teal-500'} flex items-center justify-center text-lg shadow-md shrink-0 select-none`}>
+                  {member.avatar || '🥑'}
+                </div>
 
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs sm:text-sm font-bold text-white truncate">
-                        {member.name}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs sm:text-sm font-bold text-white truncate">
+                      {member.name}
+                    </span>
+                    {isCurrent ? (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold shrink-0">
+                        Вы
                       </span>
-                      {isCurrent ? (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold shrink-0">
-                          Вы
-                        </span>
-                      ) : (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 shrink-0">
-                          Участник
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-[11px] text-slate-400 font-mono truncate">{member.email}</div>
+                    ) : (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 shrink-0">
+                        Участник
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-400 font-mono truncate">{member.email}</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="text-right font-mono">
+                  <div className="text-[9px] text-slate-500 uppercase tracking-wider">Траты</div>
+                  <div className={`font-bold text-xs sm:text-sm ${isMemberOverBudget ? 'text-rose-400/85' : 'text-emerald-400/80'}`}>
+                    {formatRubles(memberSpent)}
                   </div>
                 </div>
 
@@ -184,23 +192,6 @@ export const FamilyMemberList: React.FC<FamilyMemberListProps> = ({
                     )}
                   </button>
                 )}
-              </div>
-
-              {/* Integrated spending bar & percentage */}
-              <div className="pt-2 border-t border-slate-800/60 space-y-1">
-                <div className="flex items-center justify-between text-[11px] font-mono">
-                  <span className="text-slate-400 text-[10px]">Траты за месяц:</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-emerald-400/80">{formatRubles(memberSpent)}</span>
-                    <span className="text-slate-500 text-[10px]">({memberPercent}%)</span>
-                  </div>
-                </div>
-                <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
-                    style={{ width: `${memberPercent}%` }}
-                  />
-                </div>
               </div>
             </div>
           );

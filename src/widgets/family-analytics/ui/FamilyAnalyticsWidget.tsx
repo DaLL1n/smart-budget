@@ -117,20 +117,25 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
   const percentUsed = Math.min(100, Math.round((totalPeriodSpent / familyMonthlyBudget) * 100));
   const avgPerDay = daysInRange > 0 ? Math.round(totalPeriodSpent / daysInRange) : 0;
 
-  // Breakdown per member
+  // Breakdown per member (percentage of individual budget limit)
   const memberBreakdown = useMemo(() => {
+    const defaultMemberBudget = Math.round(familyMonthlyBudget / Math.max(1, family.members.length));
     return family.members.map(member => {
       const spent = dateFilteredExpenses
         .filter(e => e.userId === member.userId)
         .reduce((sum, e) => sum + e.amount, 0);
-      const percent = totalPeriodSpent > 0 ? Math.round((spent / totalPeriodSpent) * 100) : 0;
+      const budget = member.monthlyBudget || defaultMemberBudget;
+      const percent = Math.min(100, Math.round((spent / budget) * 100));
+      const percentLabel = spent > 0 && percent < 1 ? '< 1%' : `${percent}%`;
       return {
         member,
         spent,
+        budget,
         percent,
+        percentLabel,
       };
     }).sort((a, b) => b.spent - a.spent);
-  }, [family.members, dateFilteredExpenses, totalPeriodSpent]);
+  }, [family.members, dateFilteredExpenses, familyMonthlyBudget]);
 
   // Charts data
   const dailyDistribution = useMemo(() => {
@@ -228,15 +233,6 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
             <Users className="w-3.5 h-3.5 text-emerald-400" />
             <span>Вклад участников в общие траты</span>
           </h4>
-          {selectedMemberId !== 'all' && (
-            <button
-              type="button"
-              onClick={() => setSelectedMemberId('all')}
-              className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium transition-colors cursor-pointer"
-            >
-              Сбросить фильтр
-            </button>
-          )}
         </div>
 
         {memberBreakdown.length > 3 ? (
@@ -246,7 +242,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
             scrollClassName="max-h-[224px] sm:max-h-[86px] pr-3.5 py-1"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {memberBreakdown.map(({ member, spent, percent }) => {
+              {memberBreakdown.map(({ member, spent, budget, percent, percentLabel }) => {
                 const isSelected = selectedMemberId === member.userId;
                 return (
                   <button
@@ -260,25 +256,39 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
                     }`}
                     title={isSelected ? 'Сбросить фильтр по участнику' : `Фильтровать по участнику: ${member.name}`}
                   >
+                    {/* Top row: Avatar + Name on left, Spent on right */}
                     <div className="flex items-center justify-between text-xs w-full">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-base shrink-0">{member.avatar || '🥑'}</span>
+                        <span className="text-base shrink-0 select-none">{member.avatar || '🥑'}</span>
                         <span className={`font-semibold truncate ${isSelected ? 'text-emerald-300' : 'text-slate-200'}`}>
                           {member.name}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5 font-mono shrink-0">
-                        <span className={`font-bold ${isSelected ? 'text-emerald-300' : 'text-emerald-400/80'}`}>
+                      <div className="font-mono shrink-0">
+                        <span className={`font-bold text-xs sm:text-sm ${isSelected ? 'text-emerald-300' : percent > 100 ? 'text-rose-400/85' : 'text-emerald-400/80'}`}>
                           {formatRubles(spent)}
                         </span>
-                        <span className="text-slate-500 text-[10px]">({percent}%)</span>
                       </div>
                     </div>
-                    <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
-                        style={{ width: `${percent}%` }}
-                      />
+
+                    {/* Free breathing space + Label row above progress bar */}
+                    <div className="pt-2 border-t border-slate-800/60 space-y-1">
+                      <div className="text-[10px] text-slate-400 font-mono">
+                        {percentLabel} от бюджета
+                      </div>
+                      <div 
+                        className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden"
+                        title={`Израсходовано ${percentLabel} от бюджета (${formatRubles(spent)} из ${formatRubles(budget)})`}
+                      >
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            percent > 85 
+                              ? 'bg-gradient-to-r from-amber-500 to-rose-500' 
+                              : 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                          }`}
+                          style={{ width: `${Math.max(spent > 0 ? 1 : 0, percent)}%` }}
+                        />
+                      </div>
                     </div>
                   </button>
                 );
@@ -287,39 +297,53 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
           </ScrollContainer>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-            {memberBreakdown.map(({ member, spent, percent }) => {
+            {memberBreakdown.map(({ member, spent, budget, percent, percentLabel }) => {
               const isSelected = selectedMemberId === member.userId;
               return (
                 <button
                   key={member.userId}
                   type="button"
                   onClick={() => setSelectedMemberId(isSelected ? 'all' : member.userId)}
-                  className={`p-3 rounded-xl border space-y-2 text-left cursor-pointer transition-all duration-200 ${
+                  className={`p-3 rounded-xl border space-y-2.5 text-left cursor-pointer transition-all duration-200 ${
                     isSelected
                       ? 'bg-emerald-500/15 border-emerald-500/50 shadow-md shadow-emerald-950/40 ring-1 ring-emerald-500/30'
                       : 'bg-slate-950/60 hover:bg-slate-900/80 border-slate-800/80 hover:border-slate-700/80'
                   }`}
-                  title={isSelected ? 'Сбросить фильтр по участнику' : `Фильтровать по участнику: ${member.name}`}
+                  title={isSelected ? 'Сбросить фильтр по участнику' : `Фильтровать по участнику: ${member.name} (${percentLabel} от лимита)`}
                 >
+                  {/* Top row: Avatar + Name on left, Spent on right */}
                   <div className="flex items-center justify-between text-xs w-full">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-base shrink-0">{member.avatar || '🥑'}</span>
+                      <span className="text-base shrink-0 select-none">{member.avatar || '🥑'}</span>
                       <span className={`font-semibold truncate ${isSelected ? 'text-emerald-300' : 'text-slate-200'}`}>
                         {member.name}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 font-mono shrink-0">
-                      <span className={`font-bold ${isSelected ? 'text-emerald-300' : 'text-emerald-400/80'}`}>
+                    <div className="font-mono shrink-0">
+                      <span className={`font-bold text-xs sm:text-sm ${isSelected ? 'text-emerald-300' : percent > 100 ? 'text-rose-400/85' : 'text-emerald-400/80'}`}>
                         {formatRubles(spent)}
                       </span>
-                      <span className="text-slate-500 text-[10px]">({percent}%)</span>
                     </div>
                   </div>
-                  <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
-                      style={{ width: `${percent}%` }}
-                    />
+
+                  {/* Free breathing space + Label row above progress bar */}
+                  <div className="pt-2 border-t border-slate-800/60 space-y-1">
+                    <div className="text-[10px] text-slate-400 font-mono">
+                      {percentLabel} от бюджета
+                    </div>
+                    <div 
+                      className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden"
+                      title={`Израсходовано ${percentLabel} от бюджета (${formatRubles(spent)} из ${formatRubles(budget)})`}
+                    >
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          percent > 85 
+                            ? 'bg-gradient-to-r from-amber-500 to-rose-500' 
+                            : 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                        }`}
+                        style={{ width: `${Math.max(spent > 0 ? 1 : 0, percent)}%` }}
+                      />
+                    </div>
                   </div>
                 </button>
               );
