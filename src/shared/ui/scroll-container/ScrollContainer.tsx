@@ -14,6 +14,8 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
   ...rest
 }, forwardedRef) => {
   const innerRef = useRef<HTMLDivElement>(null);
+  const horizontalTrackRef = useRef<HTMLDivElement>(null);
+  const verticalTrackRef = useRef<HTMLDivElement>(null);
   useImperativeHandle(forwardedRef, () => innerRef.current as HTMLDivElement);
 
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -22,6 +24,12 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
   const [canScrollBottom, setCanScrollBottom] = useState(false);
   const [hasHorizontalOverflow, setHasHorizontalOverflow] = useState(false);
   const [hasVerticalOverflow, setHasVerticalOverflow] = useState(false);
+
+  // Dragging state for mouse / pointer on PC
+  const [isDraggingH, setIsDraggingH] = useState(false);
+  const [isDraggingV, setIsDraggingV] = useState(false);
+  const dragStartH = useRef<{ startX: number; startScrollLeft: number } | null>(null);
+  const dragStartV = useRef<{ startY: number; startScrollTop: number } | null>(null);
 
   const [scrollProgress, setScrollProgress] = useState({
     leftPercent: 0,
@@ -86,26 +94,152 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
     }
   };
 
-  const handleHorizontalTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  // --- Horizontal Drag & Click Handlers ---
+  const handleThumbPointerDownH = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
     const el = innerRef.current;
-    const track = e.currentTarget;
-    if (!el || !track) return;
-    const rect = track.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
-    const targetScroll = ratio * (el.scrollWidth - el.clientWidth);
-    el.scrollTo({ left: targetScroll, behavior: 'smooth' });
+    if (!el) return;
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+
+    setIsDraggingH(true);
+    dragStartH.current = {
+      startX: e.clientX,
+      startScrollLeft: el.scrollLeft,
+    };
   };
 
-  const handleVerticalTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleThumbPointerMoveH = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingH || !dragStartH.current) return;
     const el = innerRef.current;
-    const track = e.currentTarget;
+    const track = horizontalTrackRef.current;
     if (!el || !track) return;
+
+    const trackWidth = track.clientWidth;
+    const thumbWidth = (scrollProgress.widthPercent / 100) * trackWidth;
+    const maxTrackTravel = trackWidth - thumbWidth;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+
+    if (maxTrackTravel <= 0 || maxScroll <= 0) return;
+
+    const deltaX = e.clientX - dragStartH.current.startX;
+    const scrollDelta = (deltaX / maxTrackTravel) * maxScroll;
+    el.scrollLeft = Math.max(0, Math.min(maxScroll, dragStartH.current.startScrollLeft + scrollDelta));
+  };
+
+  const handleThumbPointerUpH = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingH) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+      setIsDraggingH(false);
+      dragStartH.current = null;
+    }
+  };
+
+  const handleTrackPointerDownH = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = innerRef.current;
+    const track = horizontalTrackRef.current;
+    if (!el || !track) return;
+
     const rect = track.getBoundingClientRect();
+    const trackWidth = rect.width;
+    const thumbWidth = (scrollProgress.widthPercent / 100) * trackWidth;
+    const maxTrackTravel = trackWidth - thumbWidth;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+
+    if (maxTrackTravel <= 0 || maxScroll <= 0) return;
+
+    const clickX = e.clientX - rect.left;
+    const targetThumbLeft = Math.max(0, Math.min(maxTrackTravel, clickX - thumbWidth / 2));
+    const targetScroll = (targetThumbLeft / maxTrackTravel) * maxScroll;
+    el.scrollLeft = targetScroll;
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    setIsDraggingH(true);
+    dragStartH.current = {
+      startX: e.clientX,
+      startScrollLeft: targetScroll,
+    };
+  };
+
+  // --- Vertical Drag & Click Handlers ---
+  const handleThumbPointerDownV = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = innerRef.current;
+    if (!el) return;
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+
+    setIsDraggingV(true);
+    dragStartV.current = {
+      startY: e.clientY,
+      startScrollTop: el.scrollTop,
+    };
+  };
+
+  const handleThumbPointerMoveV = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingV || !dragStartV.current) return;
+    const el = innerRef.current;
+    const track = verticalTrackRef.current;
+    if (!el || !track) return;
+
+    const trackHeight = track.clientHeight;
+    const thumbHeight = (scrollProgress.heightPercent / 100) * trackHeight;
+    const maxTrackTravel = trackHeight - thumbHeight;
+    const maxScroll = el.scrollHeight - el.clientHeight;
+
+    if (maxTrackTravel <= 0 || maxScroll <= 0) return;
+
+    const deltaY = e.clientY - dragStartV.current.startY;
+    const scrollDelta = (deltaY / maxTrackTravel) * maxScroll;
+    el.scrollTop = Math.max(0, Math.min(maxScroll, dragStartV.current.startScrollTop + scrollDelta));
+  };
+
+  const handleThumbPointerUpV = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingV) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+      setIsDraggingV(false);
+      dragStartV.current = null;
+    }
+  };
+
+  const handleTrackPointerDownV = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = innerRef.current;
+    const track = verticalTrackRef.current;
+    if (!el || !track) return;
+
+    const rect = track.getBoundingClientRect();
+    const trackHeight = rect.height;
+    const thumbHeight = (scrollProgress.heightPercent / 100) * trackHeight;
+    const maxTrackTravel = trackHeight - thumbHeight;
+    const maxScroll = el.scrollHeight - el.clientHeight;
+
+    if (maxTrackTravel <= 0 || maxScroll <= 0) return;
+
     const clickY = e.clientY - rect.top;
-    const ratio = Math.max(0, Math.min(1, clickY / rect.height));
-    const targetScroll = ratio * (el.scrollHeight - el.clientHeight);
-    el.scrollTo({ top: targetScroll, behavior: 'smooth' });
+    const targetThumbTop = Math.max(0, Math.min(maxTrackTravel, clickY - thumbHeight / 2));
+    const targetScroll = (targetThumbTop / maxTrackTravel) * maxScroll;
+    el.scrollTop = targetScroll;
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    setIsDraggingV(true);
+    dragStartV.current = {
+      startY: e.clientY,
+      startScrollTop: targetScroll,
+    };
   };
 
   // Re-check whenever children change (e.g. pagination or items change)
@@ -175,97 +309,137 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
         {children}
       </div>
 
-      {/* Subtle Horizontal Scrollbar Line with Light Indicator Arrows */}
+      {/* Horizontal Custom Scrollbar Line with Draggable Thumb & Arrows */}
       {(orientation === 'horizontal' || orientation === 'both') && (
         <div 
           className={`flex items-center gap-1.5 px-0.5 w-full select-none transition-all duration-200 ease-out overflow-hidden ${
-            hasHorizontalOverflow ? 'h-4 opacity-100 mt-1.5' : 'h-0 opacity-0 mt-0 pointer-events-none'
+            hasHorizontalOverflow ? 'h-5 opacity-100 mt-1.5' : 'h-0 opacity-0 mt-0 pointer-events-none'
           }`} 
           aria-hidden="true"
         >
+          {/* Left Arrow Button */}
           <button
             type="button"
             onClick={() => scrollStep('left')}
             disabled={!canScrollLeft}
-            className="p-0.5 rounded text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+            className="p-1 rounded-md text-slate-500 hover:text-slate-200 hover:bg-slate-850 disabled:opacity-20 disabled:pointer-events-none transition-colors cursor-pointer shrink-0"
             title="Прокрутить влево"
           >
             <ChevronLeft 
-              className={`w-3 h-3 shrink-0 transition-colors duration-200 ${
-                canScrollLeft ? 'text-slate-400' : 'text-slate-700/30'
+              className={`w-3.5 h-3.5 shrink-0 transition-colors duration-200 ${
+                canScrollLeft ? 'text-slate-300' : 'text-slate-700/40'
               }`} 
             />
           </button>
+
+          {/* Track Hit Container with Draggable Thumb */}
           <div 
-            onClick={handleHorizontalTrackClick}
-            className="h-1 flex-1 bg-slate-800/60 hover:bg-slate-800/90 rounded-full relative overflow-hidden cursor-pointer"
+            ref={horizontalTrackRef}
+            onPointerDown={handleTrackPointerDownH}
+            onPointerMove={handleThumbPointerMoveH}
+            onPointerUp={handleThumbPointerUpH}
+            onPointerCancel={handleThumbPointerUpH}
+            className="h-5 flex items-center flex-1 cursor-pointer select-none relative group/track"
+            title="Зажмите и перетащите для прокрутки"
           >
-            <div 
-              className={`absolute top-0 bottom-0 rounded-full transition-all duration-150 ${
-                canScrollRight || canScrollLeft ? 'bg-slate-400/60 hover:bg-slate-300' : 'bg-slate-600/40'
-              }`}
-              style={{
-                left: `${scrollProgress.leftPercent}%`,
-                width: `${scrollProgress.widthPercent}%`,
-              }}
-            />
+            {/* Visual Track Bar */}
+            <div className="w-full h-1.5 group-hover/track:h-2 bg-slate-800/80 group-hover/track:bg-slate-800 rounded-full relative transition-all duration-150 overflow-visible">
+              {/* Draggable Pill Thumb */}
+              <div 
+                onPointerDown={handleThumbPointerDownH}
+                onPointerMove={handleThumbPointerMoveH}
+                onPointerUp={handleThumbPointerUpH}
+                onPointerCancel={handleThumbPointerUpH}
+                className={`absolute -top-0.5 -bottom-0.5 rounded-full touch-none select-none ${
+                  isDraggingH 
+                    ? 'bg-emerald-400 shadow-md shadow-emerald-500/50 ring-2 ring-emerald-400/40 cursor-grabbing transition-none' 
+                    : 'bg-slate-400/80 hover:bg-emerald-400/90 hover:shadow-sm cursor-grab transition-all duration-150'
+                }`}
+                style={{
+                  left: `${scrollProgress.leftPercent}%`,
+                  width: `${scrollProgress.widthPercent}%`,
+                }}
+              />
+            </div>
           </div>
+
+          {/* Right Arrow Button */}
           <button
             type="button"
             onClick={() => scrollStep('right')}
             disabled={!canScrollRight}
-            className="p-0.5 rounded text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+            className="p-1 rounded-md text-slate-500 hover:text-slate-200 hover:bg-slate-850 disabled:opacity-20 disabled:pointer-events-none transition-colors cursor-pointer shrink-0"
             title="Прокрутить вправо"
           >
             <ChevronRight 
-              className={`w-3 h-3 shrink-0 transition-colors duration-200 ${
-                canScrollRight ? 'text-slate-400' : 'text-slate-700/30'
+              className={`w-3.5 h-3.5 shrink-0 transition-colors duration-200 ${
+                canScrollRight ? 'text-slate-300' : 'text-slate-700/40'
               }`} 
             />
           </button>
         </div>
       )}
 
-      {/* Subtle Vertical Scrollbar Line with Light Indicator Arrows */}
+      {/* Vertical Custom Scrollbar Line with Draggable Thumb & Arrows */}
       {(orientation === 'vertical' || orientation === 'both') && hasVerticalOverflow && (
-        <div className="flex flex-col items-center gap-1 absolute right-0.5 top-1.5 bottom-1.5 w-3 select-none z-10" aria-hidden="true">
+        <div className="flex flex-col items-center gap-1 absolute right-0.5 top-1.5 bottom-1.5 w-4 select-none z-10" aria-hidden="true">
+          {/* Up Arrow Button */}
           <button
             type="button"
             onClick={() => scrollStep('up')}
             disabled={!canScrollTop}
-            className="p-0.5 rounded text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+            className="p-1 rounded-md text-slate-500 hover:text-slate-200 hover:bg-slate-850 disabled:opacity-20 disabled:pointer-events-none transition-colors cursor-pointer shrink-0"
             title="Прокрутить вверх"
           >
             <ChevronUp 
-              className={`w-3 h-3 shrink-0 transition-colors duration-200 ${
-                canScrollTop ? 'text-slate-400' : 'text-slate-700/30'
+              className={`w-3.5 h-3.5 shrink-0 transition-colors duration-200 ${
+                canScrollTop ? 'text-slate-300' : 'text-slate-700/40'
               }`} 
             />
           </button>
+
+          {/* Track Hit Container with Draggable Thumb */}
           <div 
-            onClick={handleVerticalTrackClick}
-            className="w-1 flex-1 bg-slate-800/60 hover:bg-slate-800/90 rounded-full relative overflow-hidden cursor-pointer"
+            ref={verticalTrackRef}
+            onPointerDown={handleTrackPointerDownV}
+            onPointerMove={handleThumbPointerMoveV}
+            onPointerUp={handleThumbPointerUpV}
+            onPointerCancel={handleThumbPointerUpV}
+            className="w-4 flex justify-center flex-1 cursor-pointer select-none relative group/vtrack"
+            title="Зажмите и перетащите для прокрутки"
           >
-            <div 
-              className={`absolute left-0 right-0 rounded-full transition-all duration-150 ${
-                canScrollTop || canScrollBottom ? 'bg-slate-400/60 hover:bg-slate-300' : 'bg-slate-600/40'
-              }`}
-              style={{
-                top: `${scrollProgress.topPercent}%`,
-                height: `${scrollProgress.heightPercent}%`,
-              }}
-            />
+            {/* Visual Track Bar */}
+            <div className="h-full w-1.5 group-hover/vtrack:w-2 bg-slate-800/80 group-hover/vtrack:bg-slate-800 rounded-full relative transition-all duration-150 overflow-visible">
+              {/* Draggable Pill Thumb */}
+              <div 
+                onPointerDown={handleThumbPointerDownV}
+                onPointerMove={handleThumbPointerMoveV}
+                onPointerUp={handleThumbPointerUpV}
+                onPointerCancel={handleThumbPointerUpV}
+                className={`absolute -left-0.5 -right-0.5 rounded-full touch-none select-none ${
+                  isDraggingV 
+                    ? 'bg-emerald-400 shadow-md shadow-emerald-500/50 ring-2 ring-emerald-400/40 cursor-grabbing transition-none' 
+                    : 'bg-slate-400/80 hover:bg-emerald-400/90 hover:shadow-sm cursor-grab transition-all duration-150'
+                }`}
+                style={{
+                  top: `${scrollProgress.topPercent}%`,
+                  height: `${scrollProgress.heightPercent}%`,
+                }}
+              />
+            </div>
           </div>
+
+          {/* Down Arrow Button */}
           <button
             type="button"
             onClick={() => scrollStep('down')}
             disabled={!canScrollBottom}
-            className="p-0.5 rounded text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+            className="p-1 rounded-md text-slate-500 hover:text-slate-200 hover:bg-slate-850 disabled:opacity-20 disabled:pointer-events-none transition-colors cursor-pointer shrink-0"
             title="Прокрутить вниз"
           >
             <ChevronDown 
-              className={`w-3 h-3 shrink-0 transition-colors duration-200 ${
-                canScrollBottom ? 'text-slate-400' : 'text-slate-700/30'
+              className={`w-3.5 h-3.5 shrink-0 transition-colors duration-200 ${
+                canScrollBottom ? 'text-slate-300' : 'text-slate-700/40'
               }`} 
             />
           </button>

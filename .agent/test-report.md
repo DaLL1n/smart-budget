@@ -5,8 +5,6 @@
   - result: 0 errors
 - production_build:
   - command: npm run build (vite build)
-  - result: 0 errors, build completed in 5.75s
+  - result: 0 errors, build completed in 5.45s
 - verification_scope:
-  - PersonalAnalyticsWidget: Карточки 1, 2, 3 сумм переведены на font-bold (700)
-  - FamilyAnalyticsWidget: Карточки 1, 2, 3 сумм переведены на font-bold (700)
-  - FamilySpaceWidget: Блоки сумм семейного пространства переведены на font-bold (700)
+  - ScrollContainer: ползунки горизонтального и вертикального скроллбара захватывают курсор через setPointerCapture, перемещаются синхронно с движениями мыши и работают при клике и драге по треку.
