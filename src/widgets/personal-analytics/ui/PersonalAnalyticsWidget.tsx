@@ -20,7 +20,8 @@ import {
   calculateDailyBarDistribution, 
   calculateStoreBreakdown,
   usePersonalExpensesQuery,
-  useDeleteExpenseMutation
+  useDeleteExpenseMutation,
+  useRestoreExpenseMutation
 } from '../../../entities/expense';
 import { formatRubles } from '../../../entities/budget';
 import { CategoryDonutChart } from './charts/CategoryDonutChart';
@@ -38,6 +39,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
 }) => {
   const { data: expenses = [], isLoading } = usePersonalExpensesQuery(currentUser.id);
   const deleteMutation = useDeleteExpenseMutation(currentUser.id, currentUser.familyId);
+  const restoreMutation = useRestoreExpenseMutation(currentUser.id, currentUser.familyId);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedDayDate, setSelectedDayDate] = useState<string | null>(null);
 
@@ -53,6 +55,14 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
       console.error('Failed to delete expense:', err);
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleRestore = async (expenseId: string) => {
+    try {
+      await restoreMutation.mutateAsync({ expenseId });
+    } catch (err) {
+      console.error('Failed to restore expense:', err);
     }
   };
 
@@ -269,6 +279,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
         periodTitle={periodTitle}
         onResetDateFilter={() => setSelectedDayDate(null)}
         onDeleteExpense={handleDelete}
+        onRestoreExpense={handleRestore}
         deletingId={deletingId}
         currentUserId={currentUser.id}
         showBuyer={false}

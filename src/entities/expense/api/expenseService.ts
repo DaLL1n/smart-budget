@@ -214,10 +214,43 @@ export async function createPersonalExpense(params: {
   return newExpense;
 }
 
+export const LOCAL_DELETED_EXPENSES_KEY = 'smart_budget_deleted_expenses';
+
+export function getLocalDeletedExpenses(userId: string): Expense[] {
+  try {
+    const raw = localStorage.getItem(`${LOCAL_DELETED_EXPENSES_KEY}_${userId}`);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.warn('Error reading deleted expenses:', e);
+  }
+  return [];
+}
+
+export function saveLocalDeletedExpenses(userId: string, expenses: Expense[]): void {
+  try {
+    localStorage.setItem(`${LOCAL_DELETED_EXPENSES_KEY}_${userId}`, JSON.stringify(expenses));
+  } catch (e) {
+    console.warn('Error saving deleted expenses:', e);
+  }
+}
+
 /**
- * Deletes a personal expense by ID
+ * Deletes a personal expense by ID and saves to deleted history
  */
 export async function deletePersonalExpense(expenseId: string, userId: string): Promise<void> {
+  // Always update personal cache & store into deleted list
+  const local = getLocalExpenses(userId);
+  const toDelete = local.find((e) => e.id === expenseId);
+  if (toDelete) {
+    const deletedList = getLocalDeletedExpenses(userId);
+    if (!deletedList.some((d) => d.id === expenseId)) {
+      saveLocalDeletedExpenses(userId, [toDelete, ...deletedList]);
+    }
+  }
+
+  const updated = local.filter((e) => e.id !== expenseId);
+  saveLocalExpenses(userId, updated);
+
   try {
     const { error } = await supabase.from('expenses').delete().eq('id', expenseId);
     if (error) {
@@ -226,11 +259,6 @@ export async function deletePersonalExpense(expenseId: string, userId: string): 
   } catch (err) {
     console.warn('Supabase delete expense note:', err);
   }
-
-  // Always update personal cache
-  const local = getLocalExpenses(userId);
-  const updated = local.filter((e) => e.id !== expenseId);
-  saveLocalExpenses(userId, updated);
 
   // Also clean up all cached family expenses in localStorage
   try {
@@ -248,6 +276,40 @@ export async function deletePersonalExpense(expenseId: string, userId: string): 
   } catch (e) {
     console.warn('Error cleaning family cache on delete:', e);
   }
+}
+
+/**
+ * Restores a deleted personal expense by ID
+ */
+export async function restorePersonalExpense(expenseId: string, userId: string): Promise<Expense | null> {
+  const deletedList = getLocalDeletedExpenses(userId);
+  const toRestore = deletedList.find((e) => e.id === expenseId);
+  if (!toRestore) return null;
+
+  // Remove from deleted list
+  saveLocalDeletedExpenses(userId, deletedList.filter((e) => e.id !== expenseId));
+
+  // Add back to active expenses
+  const local = getLocalExpenses(userId);
+  saveLocalExpenses(userId, [toRestore, ...local]);
+
+  try {
+    await supabase.from('expenses').upsert({
+      id: toRestore.id,
+      user_id: toRestore.userId,
+      family_id: toRestore.familyId || null,
+      amount: toRestore.amount,
+      category: toRestore.category,
+      store_id: toRestore.storeId,
+      date: toRestore.date,
+      title: toRestore.title || 'Покупка продуктов',
+      created_at: toRestore.createdAt || new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn('Supabase restore expense note:', err);
+  }
+
+  return toRestore;
 }
 
 /**

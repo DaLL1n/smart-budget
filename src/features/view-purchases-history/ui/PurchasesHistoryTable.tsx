@@ -7,18 +7,25 @@ import {
   ChevronRight,
   Trash2,
   Loader2,
-  X
+  X,
+  RotateCcw
 } from 'lucide-react';
 import { 
   useLegacyTable, 
   legacyCreateColumnHelper, 
   getCoreRowModel, 
-  getSortedRowModel,
+  getSortedRowModel, 
   getPaginationRowModel
 } from '@tanstack/react-table/legacy';
 import { flexRender } from '@tanstack/react-table';
 import { SortingState, PaginationState } from '@tanstack/table-core';
-import { Expense, EXPENSE_CATEGORIES, formatDateDdMmYy } from '../../../entities/expense';
+import { 
+  Expense, 
+  EXPENSE_CATEGORIES, 
+  formatDateDdMmYy, 
+  getLocalDeletedExpenses, 
+  restorePersonalExpense 
+} from '../../../entities/expense';
 import { POPULAR_STORES } from '../../../entities/store';
 import { formatRubles } from '../../../entities/budget';
 import { FamilyMember } from '../../../entities/family';
@@ -32,6 +39,7 @@ export interface PurchasesHistoryTableProps {
   periodTitle?: string;
   onResetDateFilter?: () => void;
   onDeleteExpense?: (expenseId: string) => Promise<void> | void;
+  onRestoreExpense?: (expenseId: string) => Promise<void> | void;
   deletingId?: string | null;
   members?: FamilyMember[];
   currentUserId?: string;
@@ -47,6 +55,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
   periodTitle,
   onResetDateFilter,
   onDeleteExpense,
+  onRestoreExpense,
   deletingId,
   members = [],
   currentUserId,
@@ -57,13 +66,50 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
   const [sorting, setSorting] = useState<SortingState>([{ id: 'date', desc: true }]);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
 
+  const [showDeleted, setShowDeleted] = useState<boolean>(false);
+  const [deletedList, setDeletedList] = useState<Expense[]>(() => {
+    if (currentUserId) {
+      return getLocalDeletedExpenses(currentUserId);
+    }
+    return [];
+  });
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+
+  // Sync deleted items when current user or expenses update
+  useEffect(() => {
+    if (currentUserId) {
+      setDeletedList(getLocalDeletedExpenses(currentUserId));
+    }
+  }, [currentUserId, expenses]);
+
   const handleConfirmDelete = async () => {
     if (!expenseToDelete || !onDeleteExpense) return;
     try {
       await Promise.resolve(onDeleteExpense(expenseToDelete.id));
+      if (currentUserId) {
+        setDeletedList(getLocalDeletedExpenses(currentUserId));
+      }
       setExpenseToDelete(null);
     } catch (err) {
       console.error('Failed to delete expense:', err);
+    }
+  };
+
+  const handleRestore = async (expenseId: string) => {
+    setRestoringId(expenseId);
+    try {
+      if (onRestoreExpense) {
+        await Promise.resolve(onRestoreExpense(expenseId));
+      } else if (currentUserId) {
+        await restorePersonalExpense(expenseId, currentUserId);
+      }
+      if (currentUserId) {
+        setDeletedList(getLocalDeletedExpenses(currentUserId));
+      }
+    } catch (err) {
+      console.error('Failed to restore expense:', err);
+    } finally {
+      setRestoringId(null);
     }
   };
 
@@ -196,8 +242,30 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
         id: 'actions',
         header: '',
         cell: info => {
-          if (!onDeleteExpense) return null;
           const exp = info.row.original;
+
+          if (showDeleted) {
+            const isRestoring = restoringId === exp.id;
+            return (
+              <div className="flex items-center justify-end">
+                <button
+                  type="button"
+                  disabled={isRestoring}
+                  onClick={() => handleRestore(exp.id)}
+                  className="p-1.5 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/40 transition-colors cursor-pointer disabled:opacity-40"
+                  title="Восстановить товар"
+                >
+                  {isRestoring ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                  ) : (
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+            );
+          }
+
+          if (!onDeleteExpense) return null;
           const isDeleting = deletingId === exp.id;
           return (
             <div className="flex items-center justify-end">
@@ -221,10 +289,20 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
     );
 
     return cols;
-  }, [isBuyerVisible, members, currentUserId, onDeleteExpense, deletingId]);
+  }, [isBuyerVisible, members, currentUserId, onDeleteExpense, deletingId, showDeleted, restoringId]);
+
+  const activeData = useMemo(() => {
+    if (showDeleted) {
+      if (selectedDate) {
+        return deletedList.filter(e => e.date === selectedDate);
+      }
+      return deletedList;
+    }
+    return expenses;
+  }, [showDeleted, deletedList, expenses, selectedDate]);
 
   const table = useLegacyTable({
-    data: expenses,
+    data: activeData,
     columns,
     state: {
       sorting,
@@ -244,24 +322,38 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
         <div className="flex items-center gap-2 flex-wrap min-w-0">
           <Receipt className="w-4 h-4 text-emerald-400 shrink-0" />
           <h3 className="text-sm font-bold text-slate-100">
-            История покупок
+            {showDeleted ? 'Удаленные товары' : 'История покупок'}
           </h3>
-          {selectedDate && (
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-mono">
-              <span>{formatDateDdMmYy(selectedDate)}</span>
-              {onResetDateFilter && (
-                <button
-                  type="button"
-                  onClick={onResetDateFilter}
-                  className="hover:text-white p-0.5 rounded transition-colors cursor-pointer text-emerald-400"
-                  title="Показать все дни периода"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
+          {showDeleted && (
+            <span className="px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-300 border border-rose-500/30 text-[10px] font-mono">
+              Корзина
+            </span>
           )}
         </div>
+
+        {/* Toggle "Удаленные товары" button */}
+        <button
+          type="button"
+          onClick={() => setShowDeleted(prev => !prev)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border shrink-0 ${
+            showDeleted
+              ? 'bg-rose-500/20 text-rose-200 border-rose-500/40 shadow-sm shadow-rose-950/40 ring-1 ring-rose-500/30 font-semibold'
+              : 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white border-slate-700/70'
+          }`}
+          title={showDeleted ? 'Вернуться к не удаленным товарам' : 'Показать удаленные товары'}
+        >
+          <Trash2 className={`w-3.5 h-3.5 shrink-0 ${showDeleted ? 'text-rose-300' : 'text-slate-400'}`} />
+          <span>Удаленные товары</span>
+          {deletedList.length > 0 && (
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                showDeleted ? 'bg-rose-500/40 text-white' : 'bg-slate-700 text-slate-300'
+              }`}
+            >
+              {deletedList.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Content: Skeleton / Empty / Table */}
@@ -281,7 +373,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
         </div>
       ) : table.getRowModel().rows.length === 0 ? (
         <div className="py-12 text-center text-slate-500 text-xs">
-          В этот период покупок не было
+          {showDeleted ? 'Удаленных товаров нет' : 'В этот период покупок не было'}
         </div>
       ) : (
         <ScrollContainer orientation="horizontal" className="w-full">

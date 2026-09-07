@@ -21,7 +21,8 @@ import {
   calculateCategoryBreakdown,
   calculateStoreBreakdown,
   useFamilyExpensesQuery,
-  useDeleteExpenseMutation 
+  useDeleteExpenseMutation,
+  useRestoreExpenseMutation
 } from '../../../entities/expense';
 import { formatRubles } from '../../../entities/budget';
 import { CategoryDonutChart } from '../../personal-analytics/ui/charts/CategoryDonutChart';
@@ -43,6 +44,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
   const memberIds = useMemo(() => family.members.map(m => m.userId), [family.members]);
   const { data: expenses = [], isLoading } = useFamilyExpensesQuery(family.id, memberIds);
   const deleteMutation = useDeleteExpenseMutation(currentUser.id, family.id);
+  const restoreMutation = useRestoreExpenseMutation(currentUser.id, family.id);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string>('all');
@@ -60,6 +62,14 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
       console.error('Failed to delete expense in family view:', err);
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleRestore = async (expenseId: string) => {
+    try {
+      await restoreMutation.mutateAsync({ expenseId });
+    } catch (err) {
+      console.error('Failed to restore expense in family view:', err);
     }
   };
 
@@ -395,6 +405,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
         periodTitle={periodTitle}
         onResetDateFilter={() => setSelectedDayDate(null)}
         onDeleteExpense={handleDelete}
+        onRestoreExpense={handleRestore}
         deletingId={deletingId}
         members={family.members}
         currentUserId={currentUser.id}

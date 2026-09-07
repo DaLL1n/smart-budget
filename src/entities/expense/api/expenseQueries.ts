@@ -4,6 +4,7 @@ import {
   fetchPersonalExpenses, 
   createPersonalExpense, 
   deletePersonalExpense,
+  restorePersonalExpense,
   getLocalExpenses,
   fetchFamilyExpenses,
   getLocalFamilyExpenses
@@ -94,3 +95,20 @@ export function useDeleteExpenseMutation(userId: string, familyId?: string | nul
     },
   });
 }
+
+/**
+ * Hook to restore an expense with automatic cache invalidation
+ */
+export function useRestoreExpenseMutation(userId: string, familyId?: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ expenseId }: { expenseId: string }) => {
+      return restorePersonalExpense(expenseId, userId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: expenseQueryKeys.all });
+    },
+  });
+}
+
