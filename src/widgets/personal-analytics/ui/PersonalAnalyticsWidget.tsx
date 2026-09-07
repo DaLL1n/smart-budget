@@ -234,16 +234,9 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
 
         {/* Category Breakdown Donut Chart */}
         <div className="p-4 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <PieChart className="w-4 h-4 text-teal-400" />
-              <h3 className="text-sm font-bold text-slate-100">Категории продуктов</h3>
-            </div>
-            {selectedDayDate && (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
-                {formatDateDdMmYy(selectedDayDate)}
-              </span>
-            )}
+          <div className="flex items-center gap-2">
+            <PieChart className="w-4 h-4 text-teal-400" />
+            <h3 className="text-sm font-bold text-slate-100">Категории продуктов</h3>
           </div>
 
           <CategoryDonutChart 
