@@ -284,7 +284,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
           В этот период покупок не было
         </div>
       ) : (
-        <ScrollContainer orientation="horizontal" showHintBadge={true} className="w-full">
+        <ScrollContainer orientation="horizontal" className="w-full">
           <table className={`w-full ${isBuyerVisible ? 'min-w-[620px]' : 'min-w-[480px] sm:min-w-full'} table-fixed text-left border-collapse`}>
             {isBuyerVisible ? (
               <colgroup>
