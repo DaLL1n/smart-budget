@@ -126,7 +126,7 @@ export const FamilySpaceWidget: React.FC = () => {
               <Users className="w-3 h-3" />
               <span>Совместный бюджет</span>
             </span>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               Общий семейный бюджет
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 max-w-xl leading-relaxed">
@@ -211,7 +211,7 @@ export const FamilySpaceWidget: React.FC = () => {
               </span>
             </div>
 
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate">
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">
               Семейное пространство
             </h1>
           </div>
@@ -233,7 +233,7 @@ export const FamilySpaceWidget: React.FC = () => {
         <div className="mt-4 pt-4 border-t border-slate-800/70 flex flex-col sm:flex-row sm:items-end justify-between gap-3 sm:gap-6">
           <div className="space-y-0.5">
             <div className="text-[11px] text-slate-400 font-medium">Остаток средств семьи:</div>
-            <div className={`text-2xl sm:text-3xl font-black font-mono tracking-tight ${remainingBudget > 0 ? 'text-teal-300' : 'text-rose-400'}`}>
+            <div className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight ${remainingBudget > 0 ? 'text-teal-300' : 'text-rose-400'}`}>
               {formatRubles(remainingBudget)}
             </div>
           </div>
