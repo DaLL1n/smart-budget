@@ -20,6 +20,8 @@ import {
   calculateCategoryBreakdown,
   calculateStoreBreakdown,
   useFamilyExpensesQuery,
+  useFamilyDeletedExpensesQuery,
+  useExpensesRealtimeSubscription,
   useDeleteExpenseMutation,
   useRestoreExpenseMutation
 } from '../../../entities/expense';
@@ -27,7 +29,7 @@ import { formatRubles } from '../../../entities/budget';
 import { CategoryDonutChart } from '../../personal-analytics/ui/charts/CategoryDonutChart';
 import { DailyBarChart } from '../../personal-analytics/ui/charts/DailyBarChart';
 import { PurchasesHistoryTable } from '../../../features/view-purchases-history';
-import { ScrollContainer } from '../../../shared/ui';
+import { ScrollContainer, AnalyticsDashboardSkeleton } from '../../../shared/ui';
 
 interface FamilyAnalyticsWidgetProps {
   currentUser: User;
@@ -42,6 +44,11 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
 }) => {
   const memberIds = useMemo(() => family.members.map(m => m.userId), [family.members]);
   const { data: expenses = [], isLoading } = useFamilyExpensesQuery(family.id, memberIds);
+  const { data: familyDeletedExpenses = [] } = useFamilyDeletedExpensesQuery(family.id, memberIds);
+
+  // Realtime instant live synchronization across active family members
+  useExpensesRealtimeSubscription(family.id, currentUser.id);
+
   const deleteMutation = useDeleteExpenseMutation(currentUser.id, family.id);
   const restoreMutation = useRestoreExpenseMutation(currentUser.id, family.id);
 
@@ -137,12 +144,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
   }, [activeExpenses]);
 
   if (isLoading && expenses.length === 0) {
-    return (
-      <div className="w-full py-16 flex flex-col items-center justify-center space-y-3">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-        <span className="text-xs text-slate-400 font-mono">Загрузка семейной аналитики...</span>
-      </div>
-    );
+    return <AnalyticsDashboardSkeleton isFamily={true} />;
   }
 
   return (
@@ -407,6 +409,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
       {/* Unified Reusable Purchases History Table with Skeleton Support */}
       <PurchasesHistoryTable 
         expenses={tableExpenses}
+        deletedExpenses={familyDeletedExpenses}
         totalPeriodExpensesCount={activeExpenses.length}
         isLoading={isLoading && expenses.length === 0}
         selectedDate={selectedDayDate}

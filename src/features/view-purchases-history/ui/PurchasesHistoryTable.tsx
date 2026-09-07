@@ -40,6 +40,7 @@ export interface PurchasesHistoryTableProps {
   onResetDateFilter?: () => void;
   onDeleteExpense?: (expenseId: string) => Promise<void> | void;
   onRestoreExpense?: (expenseId: string) => Promise<void> | void;
+  deletedExpenses?: Expense[];
   deletingId?: string | null;
   members?: FamilyMember[];
   currentUserId?: string;
@@ -56,6 +57,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
   onResetDateFilter,
   onDeleteExpense,
   onRestoreExpense,
+  deletedExpenses,
   deletingId,
   members = [],
   currentUserId,
@@ -67,7 +69,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
 
   const [showDeleted, setShowDeleted] = useState<boolean>(false);
-  const [deletedList, setDeletedList] = useState<Expense[]>(() => {
+  const [localDeletedList, setLocalDeletedList] = useState<Expense[]>(() => {
     if (currentUserId) {
       return getLocalDeletedExpenses(currentUserId);
     }
@@ -78,16 +80,20 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
   // Sync deleted items when current user or expenses update
   useEffect(() => {
     if (currentUserId) {
-      setDeletedList(getLocalDeletedExpenses(currentUserId));
+      setLocalDeletedList(getLocalDeletedExpenses(currentUserId));
     }
   }, [currentUserId, expenses]);
+
+  const activeDeletedList = useMemo(() => {
+    return deletedExpenses !== undefined ? deletedExpenses : localDeletedList;
+  }, [deletedExpenses, localDeletedList]);
 
   const handleConfirmDelete = async () => {
     if (!expenseToDelete || !onDeleteExpense) return;
     try {
       await Promise.resolve(onDeleteExpense(expenseToDelete.id));
       if (currentUserId) {
-        setDeletedList(getLocalDeletedExpenses(currentUserId));
+        setLocalDeletedList(getLocalDeletedExpenses(currentUserId));
       }
       setExpenseToDelete(null);
     } catch (err) {
@@ -104,7 +110,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
         await restorePersonalExpense(expenseId, currentUserId);
       }
       if (currentUserId) {
-        setDeletedList(getLocalDeletedExpenses(currentUserId));
+        setLocalDeletedList(getLocalDeletedExpenses(currentUserId));
       }
     } catch (err) {
       console.error('Failed to restore expense:', err);
@@ -243,24 +249,34 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
         header: '',
         cell: info => {
           const exp = info.row.original;
+          const isOwner = !currentUserId || exp.userId === currentUserId;
 
           if (showDeleted) {
             const isRestoring = restoringId === exp.id;
             return (
               <div className="flex items-center justify-end">
-                <button
-                  type="button"
-                  disabled={isRestoring}
-                  onClick={() => handleRestore(exp.id)}
-                  className="p-1.5 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/40 transition-colors cursor-pointer disabled:opacity-40"
-                  title="Восстановить товар"
-                >
-                  {isRestoring ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
-                  ) : (
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  )}
-                </button>
+                {isOwner ? (
+                  <button
+                    type="button"
+                    disabled={isRestoring}
+                    onClick={() => handleRestore(exp.id)}
+                    className="p-1.5 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/40 transition-colors cursor-pointer disabled:opacity-40"
+                    title="Восстановить покупку"
+                  >
+                    {isRestoring ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                    ) : (
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                ) : (
+                  <span
+                    className="text-xs text-slate-600 font-mono px-1 select-none"
+                    title="Восстановить может только создатель"
+                  >
+                    —
+                  </span>
+                )}
               </div>
             );
           }
@@ -269,19 +285,28 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
           const isDeleting = deletingId === exp.id;
           return (
             <div className="flex items-center justify-end">
-              <button
-                type="button"
-                disabled={isDeleting}
-                onClick={() => setExpenseToDelete(exp)}
-                className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer disabled:opacity-40"
-                title="Удалить запись"
-              >
-                {isDeleting ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
-                ) : (
-                  <Trash2 className="w-3.5 h-3.5" />
-                )}
-              </button>
+              {isOwner ? (
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setExpenseToDelete(exp)}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer disabled:opacity-40"
+                  title="Удалить покупку"
+                >
+                  {isDeleting ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
+                  ) : (
+                    <Trash2 className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              ) : (
+                <span
+                  className="text-xs text-slate-600 font-mono px-1 select-none"
+                  title="Удалить может только создатель"
+                >
+                  —
+                </span>
+              )}
             </div>
           );
         },
@@ -294,12 +319,12 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
   const activeData = useMemo(() => {
     if (showDeleted) {
       if (selectedDate) {
-        return deletedList.filter(e => e.date === selectedDate);
+        return activeDeletedList.filter(e => e.date === selectedDate);
       }
-      return deletedList;
+      return activeDeletedList;
     }
     return expenses;
-  }, [showDeleted, deletedList, expenses, selectedDate]);
+  }, [showDeleted, activeDeletedList, expenses, selectedDate]);
 
   const table = useLegacyTable({
     data: activeData,
@@ -339,13 +364,13 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
         >
           <Trash2 className={`w-3.5 h-3.5 shrink-0 ${showDeleted ? 'text-rose-300' : 'text-slate-400'}`} />
           <span className="whitespace-nowrap">Удаленные товары</span>
-          {deletedList.length > 0 && (
+          {activeDeletedList.length > 0 && (
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
                 showDeleted ? 'bg-rose-500/40 text-white' : 'bg-slate-700 text-slate-300'
               }`}
             >
-              {deletedList.length}
+              {activeDeletedList.length}
             </span>
           )}
         </button>

@@ -2,134 +2,134 @@ import { supabase } from '../../../shared/api';
 import { Expense, ExpenseCategory } from '../model/types';
 import { formatDateIso } from '../model/selectors';
 
-const LOCAL_EXPENSES_KEY = 'smart_budget_personal_expenses_v1';
+export const LOCAL_EXPENSES_KEY = 'smart_budget_personal_expenses_v1';
+export const LOCAL_DELETED_EXPENSES_KEY = 'smart_budget_deleted_expenses';
 
 /**
- * Generate seed expenses for realistic analytics out-of-the-box
+ * Filter out legacy or synthetic seed mock expenses
  */
-function generateSeedExpenses(userId: string): Expense[] {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const currentDay = now.getDate();
-
-  const seeds: Expense[] = [
-    {
-      id: `seed_exp_1_${userId}`,
-      userId,
-      familyId: null,
-      amount: 1450,
-      category: 'vegetables_fruits',
-      storeId: 'vkusvill',
-      date: formatDateIso(new Date(year, month, Math.max(1, currentDay))),
-      title: 'Свежие овощи, зелень, авокадо',
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: `seed_exp_2_${userId}`,
-      userId,
-      familyId: null,
-      amount: 890,
-      category: 'dairy_cheese',
-      storeId: 'pyaterochka',
-      date: formatDateIso(new Date(year, month, Math.max(1, currentDay - 1))),
-      title: 'Молоко, творог, пармезан',
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: `seed_exp_3_${userId}`,
-      userId,
-      familyId: null,
-      amount: 2300,
-      category: 'meat_fish',
-      storeId: 'perekrestok',
-      date: formatDateIso(new Date(year, month, Math.max(1, currentDay - 2))),
-      title: 'Индейка, филе лосося',
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: `seed_exp_4_${userId}`,
-      userId,
-      familyId: null,
-      amount: 650,
-      category: 'grocery_bread',
-      storeId: 'samokat',
-      date: formatDateIso(new Date(year, month, Math.max(1, currentDay - 3))),
-      title: 'Гречневая крупа, цельнозерновой хлеб',
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: `seed_exp_5_${userId}`,
-      userId,
-      familyId: null,
-      amount: 1120,
-      category: 'ready_food',
-      storeId: 'vkusvill',
-      date: formatDateIso(new Date(year, month, Math.max(1, currentDay - 4))),
-      title: 'Обед: боул с курицей и смузи',
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: `seed_exp_6_${userId}`,
-      userId,
-      familyId: null,
-      amount: 480,
-      category: 'drinks_snacks',
-      storeId: 'magnit',
-      date: formatDateIso(new Date(year, month, Math.max(1, currentDay - 5))),
-      title: 'Ореховая смесь и минеральная вода',
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: `seed_exp_7_${userId}`,
-      userId,
-      familyId: null,
-      amount: 3200,
-      category: 'meat_fish',
-      storeId: 'auchan',
-      date: formatDateIso(new Date(year, month, Math.max(1, currentDay - 6))),
-      title: 'Большая закупка мяса и птицы на неделю',
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: `seed_exp_8_${userId}`,
-      userId,
-      familyId: null,
-      amount: 980,
-      category: 'vegetables_fruits',
-      storeId: 'pyaterochka',
-      date: formatDateIso(new Date(year, month, Math.max(1, currentDay - 7))),
-      title: 'Яблоки, бананы, томаты',
-      createdAt: new Date().toISOString(),
-    },
-  ];
-
-  return seeds;
+function cleanExpenses(list: Expense[]): Expense[] {
+  return list.filter(e => e && !e.id.startsWith('seed_exp_'));
 }
 
+/**
+ * Reads local cached expenses for a user, purging any legacy seeds
+ */
 export function getLocalExpenses(userId: string): Expense[] {
   try {
     const raw = localStorage.getItem(`${LOCAL_EXPENSES_KEY}_${userId}`);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const list = JSON.parse(raw) as Expense[];
+      const cleaned = cleanExpenses(list).filter(e => !e.deletedAt);
+      if (cleaned.length !== list.length) {
+        saveLocalExpenses(userId, cleaned);
+      }
+      return cleaned;
+    }
   } catch (e) {
     console.warn('Error reading local expenses:', e);
   }
 
-  const seeds = generateSeedExpenses(userId);
-  saveLocalExpenses(userId, seeds);
-  return seeds;
+  return [];
 }
 
-function saveLocalExpenses(userId: string, expenses: Expense[]): void {
+export function saveLocalExpenses(userId: string, expenses: Expense[]): void {
   try {
-    localStorage.setItem(`${LOCAL_EXPENSES_KEY}_${userId}`, JSON.stringify(expenses));
+    const cleaned = cleanExpenses(expenses);
+    localStorage.setItem(`${LOCAL_EXPENSES_KEY}_${userId}`, JSON.stringify(cleaned));
   } catch (e) {
     console.warn('Error saving local expenses:', e);
   }
 }
 
 /**
- * Fetches all personal expenses for a specific user from Supabase with local fallback
+ * Reads local cached deleted expenses for a user
+ */
+export function getLocalDeletedExpenses(userId: string): Expense[] {
+  try {
+    const raw = localStorage.getItem(`${LOCAL_DELETED_EXPENSES_KEY}_${userId}`);
+    if (raw) {
+      const list = JSON.parse(raw) as Expense[];
+      return cleanExpenses(list).filter(e => e.userId === userId);
+    }
+  } catch (e) {
+    console.warn('Error reading deleted expenses:', e);
+  }
+  return [];
+}
+
+export function saveLocalDeletedExpenses(userId: string, expenses: Expense[]): void {
+  try {
+    const cleaned = cleanExpenses(expenses).filter(e => e.userId === userId);
+    localStorage.setItem(`${LOCAL_DELETED_EXPENSES_KEY}_${userId}`, JSON.stringify(cleaned));
+  } catch (e) {
+    console.warn('Error saving deleted expenses:', e);
+  }
+}
+
+/**
+ * Reads local cached family deleted expenses
+ */
+export function getLocalFamilyDeletedExpenses(familyId: string, memberIds: string[] = []): Expense[] {
+  const result: Expense[] = [];
+  const seenIds = new Set<string>();
+
+  try {
+    const raw = localStorage.getItem(`${LOCAL_DELETED_EXPENSES_KEY}_family_${familyId}`);
+    if (raw) {
+      const list = cleanExpenses(JSON.parse(raw) as Expense[]);
+      list.forEach(e => {
+        if (!seenIds.has(e.id)) {
+          seenIds.add(e.id);
+          result.push(e);
+        }
+      });
+    }
+  } catch {}
+
+  memberIds.forEach(memberId => {
+    const memDeleted = getLocalDeletedExpenses(memberId);
+    memDeleted.forEach(e => {
+      if (!seenIds.has(e.id)) {
+        seenIds.add(e.id);
+        result.push(e);
+      }
+    });
+  });
+
+  return result.sort((a, b) => (b.deletedAt || b.date).localeCompare(a.deletedAt || a.date));
+}
+
+export function saveLocalFamilyDeletedExpenses(familyId: string, expenses: Expense[]): void {
+  try {
+    localStorage.setItem(`${LOCAL_DELETED_EXPENSES_KEY}_family_${familyId}`, JSON.stringify(cleanExpenses(expenses)));
+  } catch (e) {
+    console.warn('Error saving family deleted expenses:', e);
+  }
+}
+
+/**
+ * Helper to map Supabase expense row to typed Expense object
+ */
+function mapRowToExpense(row: any): Expense {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    familyId: row.family_id,
+    amount: Number(row.amount),
+    category: row.category as ExpenseCategory,
+    storeId: row.store_id,
+    date: row.date,
+    title: row.title || 'Покупка продуктов',
+    receiptItems: (row.receipt_items as any) || [],
+    createdAt: row.created_at,
+    deletedAt: row.deleted_at || null,
+    deletedBy: row.deleted_by || null,
+  };
+}
+
+/**
+ * Fetches active personal expenses for a specific user from Supabase with local fallback
  */
 export async function fetchPersonalExpenses(userId: string): Promise<Expense[]> {
   try {
@@ -137,22 +137,11 @@ export async function fetchPersonalExpenses(userId: string): Promise<Expense[]> 
       .from('expenses')
       .select('*')
       .eq('user_id', userId)
+      .is('deleted_at', null)
       .order('date', { ascending: false });
 
     if (!error && data) {
-      const supabaseResults: Expense[] = data.map((row) => ({
-        id: row.id,
-        userId: row.user_id,
-        familyId: row.family_id,
-        amount: Number(row.amount),
-        category: row.category as ExpenseCategory,
-        storeId: row.store_id,
-        date: row.date,
-        title: row.title || 'Покупка продуктов',
-        receiptItems: (row.receipt_items as any) || [],
-        createdAt: row.created_at,
-      }));
-
+      const supabaseResults = data.map(mapRowToExpense);
       saveLocalExpenses(userId, supabaseResults);
       return supabaseResults;
     }
@@ -161,6 +150,30 @@ export async function fetchPersonalExpenses(userId: string): Promise<Expense[]> 
   }
 
   return getLocalExpenses(userId);
+}
+
+/**
+ * Fetches deleted personal expenses (only for this user)
+ */
+export async function fetchPersonalDeletedExpenses(userId: string): Promise<Expense[]> {
+  try {
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('user_id', userId)
+      .not('deleted_at', 'is', null)
+      .order('deleted_at', { ascending: false });
+
+    if (!error && data) {
+      const supabaseResults = data.map(mapRowToExpense);
+      saveLocalDeletedExpenses(userId, supabaseResults);
+      return supabaseResults;
+    }
+  } catch (err) {
+    console.warn('Supabase fetch personal deleted expenses note (using local cache):', err);
+  }
+
+  return getLocalDeletedExpenses(userId);
 }
 
 /**
@@ -188,6 +201,8 @@ export async function createPersonalExpense(params: {
     date,
     title: params.title || 'Покупка продуктов',
     createdAt: new Date().toISOString(),
+    deletedAt: null,
+    deletedBy: null,
   };
 
   try {
@@ -201,6 +216,8 @@ export async function createPersonalExpense(params: {
       date,
       title: params.title || 'Покупка продуктов',
       created_at: new Date().toISOString(),
+      deleted_at: null,
+      deleted_by: null,
     });
   } catch (err) {
     console.warn('Supabase create expense note (saved locally):', err);
@@ -211,56 +228,92 @@ export async function createPersonalExpense(params: {
   const updated = [newExpense, ...local];
   saveLocalExpenses(params.userId, updated);
 
+  // If created within a family, also update cached family expenses if present
+  if (params.familyId) {
+    try {
+      const famKey = `${LOCAL_EXPENSES_KEY}_family_${params.familyId}`;
+      const rawFam = localStorage.getItem(famKey);
+      if (rawFam) {
+        const famList = JSON.parse(rawFam) as Expense[];
+        localStorage.setItem(famKey, JSON.stringify([newExpense, ...famList.filter(e => e.id !== newExpense.id)]));
+      }
+    } catch (e) {
+      console.warn('Error updating local family cache on create:', e);
+    }
+  }
+
   return newExpense;
 }
 
-export const LOCAL_DELETED_EXPENSES_KEY = 'smart_budget_deleted_expenses';
-
-export function getLocalDeletedExpenses(userId: string): Expense[] {
-  try {
-    const raw = localStorage.getItem(`${LOCAL_DELETED_EXPENSES_KEY}_${userId}`);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {
-    console.warn('Error reading deleted expenses:', e);
-  }
-  return [];
-}
-
-export function saveLocalDeletedExpenses(userId: string, expenses: Expense[]): void {
-  try {
-    localStorage.setItem(`${LOCAL_DELETED_EXPENSES_KEY}_${userId}`, JSON.stringify(expenses));
-  } catch (e) {
-    console.warn('Error saving deleted expenses:', e);
-  }
-}
-
 /**
- * Deletes a personal expense by ID and saves to deleted history
+ * Deletes an expense by ID with strict ownership validation (user can only delete their own item)
  */
 export async function deletePersonalExpense(expenseId: string, userId: string): Promise<void> {
-  // Always update personal cache & store into deleted list
+  const nowIso = new Date().toISOString();
+
+  // 1. Check existing local item in user's cache, other users' caches, or family caches
   const local = getLocalExpenses(userId);
-  const toDelete = local.find((e) => e.id === expenseId);
-  if (toDelete) {
-    const deletedList = getLocalDeletedExpenses(userId);
-    if (!deletedList.some((d) => d.id === expenseId)) {
-      saveLocalDeletedExpenses(userId, [toDelete, ...deletedList]);
+  let targetExpense = local.find(e => e.id === expenseId);
+
+  if (!targetExpense) {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(LOCAL_EXPENSES_KEY)) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          try {
+            const list = JSON.parse(raw) as Expense[];
+            const found = Array.isArray(list) ? list.find(e => e.id === expenseId) : null;
+            if (found) {
+              targetExpense = found;
+              break;
+            }
+          } catch {}
+        }
+      }
     }
   }
 
-  const updated = local.filter((e) => e.id !== expenseId);
-  saveLocalExpenses(userId, updated);
-
-  try {
-    const { error } = await supabase.from('expenses').delete().eq('id', expenseId);
-    if (error) {
-      console.warn('Supabase delete expense error:', error);
-    }
-  } catch (err) {
-    console.warn('Supabase delete expense note:', err);
+  // Also check Supabase if not found locally
+  if (!targetExpense) {
+    try {
+      const { data } = await supabase.from('expenses').select('*').eq('id', expenseId).maybeSingle();
+      if (data) {
+        targetExpense = mapRowToExpense(data);
+      }
+    } catch {}
   }
 
-  // Also clean up all cached family expenses in localStorage
+  // Permission validation: only creator can delete
+  if (targetExpense && targetExpense.userId !== userId) {
+    throw new Error('Пользователь может удалять только те товары, которые он добавил сам');
+  }
+
+  // Mark deleted
+  const deletedExpense: Expense = targetExpense ? {
+    ...targetExpense,
+    deletedAt: nowIso,
+    deletedBy: userId,
+  } : {
+    id: expenseId,
+    userId,
+    amount: 0,
+    category: 'other',
+    storeId: '',
+    date: formatDateIso(new Date()),
+    createdAt: nowIso,
+    deletedAt: nowIso,
+    deletedBy: userId,
+  };
+
+  // 2. Update personal active & deleted caches
+  const updatedActive = local.filter(e => e.id !== expenseId);
+  saveLocalExpenses(userId, updatedActive);
+
+  const personalDeleted = getLocalDeletedExpenses(userId);
+  saveLocalDeletedExpenses(userId, [deletedExpense, ...personalDeleted.filter(e => e.id !== expenseId)]);
+
+  // 3. Update family active & deleted caches
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -272,48 +325,142 @@ export async function deletePersonalExpense(expenseId: string, userId: string): 
           localStorage.setItem(key, JSON.stringify(filtered));
         }
       }
+      if (key && key.startsWith(`${LOCAL_DELETED_EXPENSES_KEY}_family_`)) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const list = JSON.parse(raw) as Expense[];
+          const updated = [deletedExpense, ...list.filter(e => e.id !== expenseId)];
+          localStorage.setItem(key, JSON.stringify(updated));
+        }
+      }
     }
   } catch (e) {
-    console.warn('Error cleaning family cache on delete:', e);
+    console.warn('Error updating local family caches on delete:', e);
+  }
+
+  // 4. Soft delete in Supabase
+  try {
+    const { error } = await supabase
+      .from('expenses')
+      .update({
+        deleted_at: nowIso,
+        deleted_by: userId,
+      })
+      .eq('id', expenseId)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.warn('Supabase soft delete expense error:', error);
+    }
+  } catch (err) {
+    console.warn('Supabase soft delete expense note:', err);
   }
 }
 
 /**
- * Restores a deleted personal expense by ID
+ * Restores a deleted expense by ID with ownership validation
  */
 export async function restorePersonalExpense(expenseId: string, userId: string): Promise<Expense | null> {
-  const deletedList = getLocalDeletedExpenses(userId);
-  const toRestore = deletedList.find((e) => e.id === expenseId);
-  if (!toRestore) return null;
+  // Find in personal or family deleted list or other deleted caches
+  const personalDeleted = getLocalDeletedExpenses(userId);
+  let toRestore = personalDeleted.find(e => e.id === expenseId);
 
-  // Remove from deleted list
-  saveLocalDeletedExpenses(userId, deletedList.filter((e) => e.id !== expenseId));
+  if (!toRestore) {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(LOCAL_DELETED_EXPENSES_KEY)) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          try {
+            const list = JSON.parse(raw) as Expense[];
+            const found = Array.isArray(list) ? list.find(e => e.id === expenseId) : null;
+            if (found) {
+              toRestore = found;
+              break;
+            }
+          } catch {}
+        }
+      }
+    }
+  }
 
-  // Add back to active expenses
-  const local = getLocalExpenses(userId);
-  saveLocalExpenses(userId, [toRestore, ...local]);
+  // Also check Supabase if not found locally
+  if (!toRestore) {
+    try {
+      const { data } = await supabase.from('expenses').select('*').eq('id', expenseId).maybeSingle();
+      if (data) {
+        toRestore = mapRowToExpense(data);
+      }
+    } catch {}
+  }
 
+  if (toRestore && toRestore.userId !== userId) {
+    throw new Error('Пользователь может восстанавливать только те товары, которые он добавил сам');
+  }
+
+  const restoredExpense: Expense = toRestore ? {
+    ...toRestore,
+    deletedAt: null,
+    deletedBy: null,
+  } : {
+    id: expenseId,
+    userId,
+    amount: 0,
+    category: 'other',
+    storeId: '',
+    date: formatDateIso(new Date()),
+    createdAt: new Date().toISOString(),
+    deletedAt: null,
+    deletedBy: null,
+  };
+
+  // Remove from personal deleted list and add back to personal active
+  saveLocalDeletedExpenses(userId, personalDeleted.filter(e => e.id !== expenseId));
+  const personalActive = getLocalExpenses(userId);
+  saveLocalExpenses(userId, [restoredExpense, ...personalActive.filter(e => e.id !== expenseId)]);
+
+  // Clean from family deleted caches and restore to family active caches
   try {
-    await supabase.from('expenses').upsert({
-      id: toRestore.id,
-      user_id: toRestore.userId,
-      family_id: toRestore.familyId || null,
-      amount: toRestore.amount,
-      category: toRestore.category,
-      store_id: toRestore.storeId,
-      date: toRestore.date,
-      title: toRestore.title || 'Покупка продуктов',
-      created_at: toRestore.createdAt || new Date().toISOString(),
-    });
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(`${LOCAL_DELETED_EXPENSES_KEY}_family_`)) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const list = JSON.parse(raw) as Expense[];
+          localStorage.setItem(key, JSON.stringify(list.filter(e => e.id !== expenseId)));
+        }
+      }
+      if (key && key.startsWith(`${LOCAL_EXPENSES_KEY}_family_`)) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const list = JSON.parse(raw) as Expense[];
+          localStorage.setItem(key, JSON.stringify([restoredExpense, ...list.filter(e => e.id !== expenseId)]));
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Error updating family caches on restore:', e);
+  }
+
+  // Soft restore in Supabase
+  try {
+    await supabase
+      .from('expenses')
+      .update({
+        deleted_at: null,
+        deleted_by: null,
+      })
+      .eq('id', expenseId)
+      .eq('user_id', userId);
   } catch (err) {
     console.warn('Supabase restore expense note:', err);
   }
 
-  return toRestore;
+  return restoredExpense;
 }
 
 /**
- * Synchronous local retrieval of family expenses from cache
+ * Synchronous local retrieval of active family expenses from cache
  */
 export function getLocalFamilyExpenses(familyId: string, memberIds: string[] = []): Expense[] {
   const result: Expense[] = [];
@@ -323,8 +470,8 @@ export function getLocalFamilyExpenses(familyId: string, memberIds: string[] = [
   try {
     const raw = localStorage.getItem(`${LOCAL_EXPENSES_KEY}_family_${familyId}`);
     if (raw) {
-      const list = JSON.parse(raw) as Expense[];
-      list.forEach(e => {
+      const list = cleanExpenses(JSON.parse(raw) as Expense[]);
+      list.filter(e => !e.deletedAt).forEach(e => {
         if (!seenIds.has(e.id)) {
           seenIds.add(e.id);
           result.push(e);
@@ -336,7 +483,7 @@ export function getLocalFamilyExpenses(familyId: string, memberIds: string[] = [
   // Aggregate personal expenses of family members
   memberIds.forEach(memberId => {
     const memList = getLocalExpenses(memberId);
-    memList.forEach(e => {
+    memList.filter(e => !e.deletedAt).forEach(e => {
       if (!seenIds.has(e.id)) {
         seenIds.add(e.id);
         result.push(e);
@@ -348,11 +495,11 @@ export function getLocalFamilyExpenses(familyId: string, memberIds: string[] = [
 }
 
 /**
- * Fetches all family expenses from Supabase with fallback to member local caches
+ * Fetches all active family expenses from Supabase with fallback to member local caches
  */
 export async function fetchFamilyExpenses(familyId: string, memberIds: string[] = []): Promise<Expense[]> {
   try {
-    let query = supabase.from('expenses').select('*');
+    let query = supabase.from('expenses').select('*').is('deleted_at', null);
     if (memberIds.length > 0) {
       query = query.or(`family_id.eq.${familyId},user_id.in.(${memberIds.join(',')})`);
     } else {
@@ -362,19 +509,7 @@ export async function fetchFamilyExpenses(familyId: string, memberIds: string[] 
     const { data, error } = await query.order('date', { ascending: false });
 
     if (!error && data) {
-      const supabaseResults: Expense[] = data.map((row) => ({
-        id: row.id,
-        userId: row.user_id,
-        familyId: row.family_id,
-        amount: Number(row.amount),
-        category: row.category as ExpenseCategory,
-        storeId: row.store_id,
-        date: row.date,
-        title: row.title || 'Покупка продуктов',
-        receiptItems: (row.receipt_items as any) || [],
-        createdAt: row.created_at,
-      }));
-
+      const supabaseResults = data.map(mapRowToExpense);
       try {
         localStorage.setItem(`${LOCAL_EXPENSES_KEY}_family_${familyId}`, JSON.stringify(supabaseResults));
       } catch {}
@@ -384,6 +519,31 @@ export async function fetchFamilyExpenses(familyId: string, memberIds: string[] 
     console.warn('Supabase fetch family expenses note (using local cache):', err);
   }
 
-  // Fallback to local items only on network error
   return getLocalFamilyExpenses(familyId, memberIds);
+}
+
+/**
+ * Fetches all deleted family expenses from Supabase with fallback to member local caches
+ */
+export async function fetchFamilyDeletedExpenses(familyId: string, memberIds: string[] = []): Promise<Expense[]> {
+  try {
+    let query = supabase.from('expenses').select('*').not('deleted_at', 'is', null);
+    if (memberIds.length > 0) {
+      query = query.or(`family_id.eq.${familyId},user_id.in.(${memberIds.join(',')})`);
+    } else {
+      query = query.eq('family_id', familyId);
+    }
+
+    const { data, error } = await query.order('deleted_at', { ascending: false });
+
+    if (!error && data) {
+      const supabaseResults = data.map(mapRowToExpense);
+      saveLocalFamilyDeletedExpenses(familyId, supabaseResults);
+      return supabaseResults;
+    }
+  } catch (err) {
+    console.warn('Supabase fetch family deleted expenses note:', err);
+  }
+
+  return getLocalFamilyDeletedExpenses(familyId, memberIds);
 }

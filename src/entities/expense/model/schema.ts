@@ -29,6 +29,8 @@ export const expenseSchema = z.object({
   title: z.string().optional(),
   receiptItems: z.array(receiptItemSchema).optional(),
   createdAt: z.string().default(() => new Date().toISOString()),
+  deletedAt: z.string().nullable().optional(),
+  deletedBy: z.string().nullable().optional(),
 });
 export type Expense = z.infer<typeof expenseSchema>;
 

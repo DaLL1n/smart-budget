@@ -15,6 +15,8 @@ export type Database = {
           category: string;
           created_at: string;
           date: string;
+          deleted_at: string | null;
+          deleted_by: string | null;
           family_id: string | null;
           id: string;
           receipt_items: Json | null;
@@ -27,6 +29,8 @@ export type Database = {
           category: string;
           created_at?: string;
           date: string;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
           family_id?: string | null;
           id?: string;
           receipt_items?: Json | null;
@@ -39,6 +43,8 @@ export type Database = {
           category?: string;
           created_at?: string;
           date?: string;
+          deleted_at?: string | null;
+          deleted_by?: string | null;
           family_id?: string | null;
           id?: string;
           receipt_items?: Json | null;

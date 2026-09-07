@@ -20,6 +20,8 @@ import {
   calculateDailyBarDistribution, 
   calculateStoreBreakdown,
   usePersonalExpensesQuery,
+  usePersonalDeletedExpensesQuery,
+  useExpensesRealtimeSubscription,
   useDeleteExpenseMutation,
   useRestoreExpenseMutation
 } from '../../../entities/expense';
@@ -27,6 +29,7 @@ import { formatRubles } from '../../../entities/budget';
 import { CategoryDonutChart } from './charts/CategoryDonutChart';
 import { DailyBarChart } from './charts/DailyBarChart';
 import { PurchasesHistoryTable } from '../../../features/view-purchases-history';
+import { AnalyticsDashboardSkeleton } from '../../../shared/ui';
 
 interface PersonalAnalyticsWidgetProps {
   currentUser: User;
@@ -38,6 +41,11 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
   filter,
 }) => {
   const { data: expenses = [], isLoading } = usePersonalExpensesQuery(currentUser.id);
+  const { data: personalDeletedExpenses = [] } = usePersonalDeletedExpensesQuery(currentUser.id);
+
+  // Realtime instant live synchronization across active browser tabs & devices
+  useExpensesRealtimeSubscription(currentUser.familyId, currentUser.id);
+
   const deleteMutation = useDeleteExpenseMutation(currentUser.id, currentUser.familyId);
   const restoreMutation = useRestoreExpenseMutation(currentUser.id, currentUser.familyId);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -99,12 +107,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
   }, [filtered]);
 
   if (isLoading && expenses.length === 0) {
-    return (
-      <div className="w-full py-16 flex flex-col items-center justify-center space-y-3">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-        <span className="text-xs text-slate-400 font-mono">Загрузка личной аналитики...</span>
-      </div>
-    );
+    return <AnalyticsDashboardSkeleton isFamily={false} />;
   }
 
   return (
@@ -273,6 +276,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
       {/* Unified Reusable Purchases History Table with Skeleton Support */}
       <PurchasesHistoryTable 
         expenses={tableExpenses}
+        deletedExpenses={personalDeletedExpenses}
         totalPeriodExpensesCount={filtered.length}
         isLoading={isLoading && expenses.length === 0}
         selectedDate={selectedDayDate}
