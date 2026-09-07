@@ -233,19 +233,19 @@ export const FamilySpaceWidget: React.FC = () => {
         <div className="mt-6 pt-6 border-t border-slate-800/70 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="p-4 rounded-2xl bg-slate-950/50 border border-slate-800/80 space-y-1">
             <div className="text-[11px] text-slate-400 font-medium">Общий бюджет месяца</div>
-            <div className="text-lg font-black text-white font-mono">{formatRubles(monthlyBudget)}</div>
+            <div className="text-lg font-bold text-white font-mono">{formatRubles(monthlyBudget)}</div>
             <div className="text-[10px] text-slate-500">Лимит на всех участников</div>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-950/50 border border-slate-800/80 space-y-1">
             <div className="text-[11px] text-slate-400 font-medium">Потрачено семьей</div>
-            <div className="text-lg font-black text-emerald-400 font-mono">{formatRubles(totalFamilySpent)}</div>
+            <div className="text-lg font-bold text-emerald-400 font-mono">{formatRubles(totalFamilySpent)}</div>
             <div className="text-[10px] text-slate-500">{percentUsed}% от общего лимита</div>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-950/50 border border-slate-800/80 space-y-1">
             <div className="text-[11px] text-slate-400 font-medium">Остаток средств</div>
-            <div className={`text-lg font-black font-mono ${remainingBudget > 0 ? 'text-teal-300' : 'text-rose-400'}`}>
+            <div className={`text-lg font-bold font-mono ${remainingBudget > 0 ? 'text-teal-300' : 'text-rose-400'}`}>
               {formatRubles(remainingBudget)}
             </div>
             <div className="text-[10px] text-slate-500">До конца расчетного периода</div>

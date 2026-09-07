@@ -29,7 +29,9 @@ const RootLayout: React.FC = () => {
   const routerState = useRouterState();
   const navigate = useNavigate();
 
-  if (isRestoring || isLoading) {
+  const isSkeletonPreview = typeof window !== 'undefined' && window.location.search.includes('skeleton=true');
+
+  if (isRestoring || isLoading || isSkeletonPreview) {
     return <AppShellSkeleton />;
   }
 

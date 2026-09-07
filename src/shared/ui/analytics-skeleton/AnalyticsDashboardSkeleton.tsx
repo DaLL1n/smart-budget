@@ -9,34 +9,67 @@ export const AnalyticsDashboardSkeleton: React.FC<AnalyticsDashboardSkeletonProp
 }) => {
   return (
     <div className="w-full space-y-6 animate-pulse">
-      {/* 1. KPI Metric Cards: 3 cards */}
+      {/* 1. KPI Metric Cards: 3 distinct cards matching real widget layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-xl space-y-3"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-slate-800" />
-                <div className="h-3.5 w-24 bg-slate-800 rounded" />
-              </div>
-              <div className="h-4 w-16 bg-slate-800/60 rounded-full" />
+        {/* Card 1: Budget / Total Spent */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-xl relative overflow-hidden space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-emerald-500/30 shrink-0" />
+              <div className="h-3.5 w-32 bg-slate-800 rounded" />
             </div>
+            <div className="h-4 w-20 rounded-full bg-emerald-500/10 border border-emerald-500/20" />
+          </div>
 
-            <div className="space-y-1.5 py-1">
-              <div className="h-8 w-36 bg-slate-800 rounded-lg" />
-              <div className="h-3 w-28 bg-slate-800/50 rounded" />
+          <div>
+            <div className="h-8 sm:h-9 w-28 sm:w-36 bg-slate-800/90 rounded-lg" />
+            <div className="h-3.5 w-44 sm:w-52 bg-slate-800/50 rounded mt-1.5" />
+          </div>
+
+          <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden p-0.5 border border-slate-800">
+            <div className="h-full rounded-full bg-emerald-500/30 w-1/4" />
+          </div>
+        </div>
+
+        {/* Card 2: Average Daily Burn */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-teal-500/30 shrink-0" />
+              <div className="h-3.5 w-36 bg-slate-800 rounded" />
             </div>
+            <div className="h-3 w-16 bg-slate-800/50 rounded" />
+          </div>
 
-            <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden border border-slate-800/60 p-0.5">
-              <div
-                className="h-full rounded-full bg-slate-800"
-                style={{ width: `${30 * i}%` }}
-              />
+          <div>
+            <div className="h-8 sm:h-9 w-24 sm:w-32 bg-slate-800/90 rounded-lg" />
+            <div className="h-3.5 w-36 sm:w-44 bg-slate-800/50 rounded mt-1.5" />
+          </div>
+
+          <div className="flex items-center gap-1.5 pt-0.5">
+            <div className="w-3.5 h-3.5 rounded bg-emerald-500/30 shrink-0" />
+            <div className="h-3 w-36 bg-slate-800/50 rounded" />
+          </div>
+        </div>
+
+        {/* Card 3: Remaining Budget */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800/90 shadow-xl backdrop-blur-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-teal-500/30 shrink-0" />
+              <div className="h-3.5 w-32 bg-slate-800 rounded" />
             </div>
           </div>
-        ))}
+
+          <div>
+            <div className="h-8 sm:h-9 w-28 sm:w-36 bg-slate-800/90 rounded-lg" />
+            <div className="h-3.5 w-36 sm:w-44 bg-slate-800/50 rounded mt-1.5" />
+          </div>
+
+          <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden p-0.5 border border-slate-800">
+            <div className="h-full rounded-full bg-teal-500/30 w-3/4" />
+          </div>
+        </div>
       </div>
 
       {/* 2. Member Breakdown Skeleton (Family mode only) */}

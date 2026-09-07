@@ -134,7 +134,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
           </div>
 
           <div>
-            <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-white tracking-tight">
               {formatRubles(kpis.totalSpent)}
             </div>
             <div className="text-[11px] text-slate-400 mt-1">
@@ -165,7 +165,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
           </div>
 
           <div>
-            <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-white tracking-tight">
               {formatRubles(kpis.averagePerDay)}
             </div>
             <div className="text-[11px] text-slate-400 mt-1">
@@ -198,7 +198,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
           </div>
 
           <div>
-            <div className="text-2xl sm:text-3xl font-black font-mono text-teal-300 tracking-tight">
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-teal-300 tracking-tight">
               {formatRubles(kpis.remainingBudget)}
             </div>
             <div className="text-[11px] text-slate-400 mt-1">

@@ -165,7 +165,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
           </div>
 
           <div>
-            <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-white tracking-tight">
               {formatRubles(totalPeriodSpent)}
             </div>
             <div className="text-[11px] text-slate-400 mt-1">
@@ -196,7 +196,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
           </div>
 
           <div>
-            <div className="text-2xl sm:text-3xl font-black font-mono text-white tracking-tight">
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-white tracking-tight">
               {formatRubles(avgPerDay)}
             </div>
             <div className="text-[11px] text-slate-400 mt-1">
@@ -229,7 +229,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
           </div>
 
           <div>
-            <div className="text-2xl sm:text-3xl font-black font-mono text-teal-300 tracking-tight">
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-teal-300 tracking-tight">
               {formatRubles(remainingBudget)}
             </div>
             <div className="text-[11px] text-slate-400 mt-1">
