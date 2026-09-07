@@ -21,7 +21,7 @@ function broadcastFamilyUpdate(type: string, payload?: any) {
 /**
  * Loads user details for family member representation from Supabase with fallback
  */
-async function loadMemberProfile(userId: string): Promise<FamilyMember | null> {
+async function loadMemberProfile(userId: string, familyId?: string): Promise<FamilyMember | null> {
   try {
     const { data, error } = await supabase
       .from('users')
@@ -30,6 +30,11 @@ async function loadMemberProfile(userId: string): Promise<FamilyMember | null> {
       .maybeSingle();
 
     if (!error && data) {
+      // If familyId is passed and user does not belong to it anymore, they left!
+      if (familyId && data.family_id !== familyId) {
+        return null;
+      }
+
       const userProfile = (data.profile as any) || {};
       return {
         userId: data.id,
@@ -51,7 +56,7 @@ async function loadMemberProfile(userId: string): Promise<FamilyMember | null> {
     const local = localStorage.getItem(LOCAL_SESSION_KEY);
     if (local) {
       const u = JSON.parse(local);
-      if (u.id === userId) {
+      if (u.id === userId && (!familyId || u.familyId === familyId)) {
         return {
           userId: u.id,
           name: u.name,
@@ -76,6 +81,7 @@ export async function fetchFamily(familyId: string): Promise<Family | null> {
   if (!familyId) return null;
 
   let rawFamily: any = null;
+  let supabaseChecked = false;
 
   try {
     const { data, error } = await supabase
@@ -84,6 +90,7 @@ export async function fetchFamily(familyId: string): Promise<Family | null> {
       .eq('id', familyId)
       .maybeSingle();
 
+    supabaseChecked = !error;
     if (!error && data) {
       rawFamily = {
         id: data.id,
@@ -94,12 +101,17 @@ export async function fetchFamily(familyId: string): Promise<Family | null> {
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };
+    } else if (!error && !data) {
+      // Family does not exist in Supabase (was deleted or dissolved)
+      localStorage.removeItem(`${LOCAL_FAMILY_PREFIX}${familyId}`);
+      familyActions.setFamily(null);
+      return null;
     }
   } catch (err) {
     console.warn('Supabase fetchFamily note:', err);
   }
 
-  if (!rawFamily) {
+  if (!rawFamily && !supabaseChecked) {
     const localRaw = localStorage.getItem(`${LOCAL_FAMILY_PREFIX}${familyId}`);
     if (localRaw) {
       try {
@@ -114,20 +126,34 @@ export async function fetchFamily(familyId: string): Promise<Family | null> {
 
   // Hydrate all member profiles
   const loadedMembers: FamilyMember[] = [];
+  const validMemberIds: string[] = [];
+
   for (const uid of memberIds) {
-    const profile = await loadMemberProfile(uid);
+    const profile = await loadMemberProfile(uid, familyId);
     if (profile) {
       loadedMembers.push(profile);
+      validMemberIds.push(profile.userId);
+    }
+  }
+
+  // Self-heal: If memberIds had users that already left the family, update Supabase
+  if (supabaseChecked && validMemberIds.length !== memberIds.length) {
+    if (validMemberIds.length <= 1) {
+      if (validMemberIds.length === 1) {
+        try {
+          await supabase.from('users').update({ family_id: null }).eq('id', validMemberIds[0]);
+        } catch {}
+      }
+      try {
+        await supabase.from('families').delete().eq('id', familyId);
+      } catch {}
+      localStorage.removeItem(`${LOCAL_FAMILY_PREFIX}${familyId}`);
+      familyActions.setFamily(null);
+      return null;
     } else {
-      loadedMembers.push({
-        userId: uid,
-        name: 'Участник семьи',
-        email: '',
-        avatar: '🥑',
-        avatarColor: 'from-emerald-400 to-teal-500',
-        joinedAt: new Date().toISOString(),
-        monthlySpent: 0,
-      });
+      try {
+        await supabase.from('families').update({ member_ids: validMemberIds }).eq('id', familyId);
+      } catch {}
     }
   }
 
@@ -472,14 +498,28 @@ export async function leaveFamily(currentUser: User): Promise<void> {
   if (!family) {
     currentUser.familyId = null;
     localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify({ ...currentUser, familyId: null }));
+    userActions.updateFamilyId(null);
+    familyActions.setFamily(null);
     return;
   }
 
-  const remainingMemberIds = family.memberIds.filter(id => id !== currentUser.id);
+  const userEmail = currentUser.email?.trim().toLowerCase();
 
-  // Update currentUser in Supabase
+  // Filter out the leaving user by both ID and Email
+  const remainingMembers = family.members.filter(
+    m => m.userId !== currentUser.id && (!userEmail || m.email?.toLowerCase() !== userEmail)
+  );
+  const remainingMemberIds = remainingMembers.map(m => m.userId);
+
+  // Update currentUser in Supabase by both ID and Email
   try {
-    await supabase.from('users').update({ family_id: null }).eq('id', currentUser.id);
+    let q = supabase.from('users').update({ family_id: null });
+    if (userEmail) {
+      q = q.or(`id.eq.${currentUser.id},email.eq.${userEmail}`);
+    } else {
+      q = q.eq('id', currentUser.id);
+    }
+    await q;
   } catch (err) {
     console.warn('Supabase leave update user error:', err);
   }
@@ -487,9 +527,15 @@ export async function leaveFamily(currentUser: User): Promise<void> {
   // If only 1 or 0 members remain, dissolve the family completely
   if (remainingMemberIds.length <= 1) {
     if (remainingMemberIds.length === 1) {
-      const lastUserId = remainingMemberIds[0];
+      const lastMember = remainingMembers[0];
       try {
-        await supabase.from('users').update({ family_id: null }).eq('id', lastUserId);
+        let qLast = supabase.from('users').update({ family_id: null });
+        if (lastMember.email) {
+          qLast = qLast.or(`id.eq.${lastMember.userId},email.eq.${lastMember.email.trim().toLowerCase()}`);
+        } else {
+          qLast = qLast.eq('id', lastMember.userId);
+        }
+        await qLast;
       } catch (err) {
         console.warn('Supabase reset last user family_id error:', err);
       }
@@ -502,6 +548,7 @@ export async function leaveFamily(currentUser: User): Promise<void> {
     }
 
     localStorage.removeItem(`${LOCAL_FAMILY_PREFIX}${familyId}`);
+    familyActions.setFamily(null);
   } else {
     // Keep family with remaining members
     try {
@@ -532,19 +579,35 @@ export async function removeFamilyMember(currentUser: User, memberUserId: string
   const familyId = currentUser.familyId;
   if (!familyId) throw new Error('Вы не состоите в семье.');
 
-  if (memberUserId === currentUser.id) {
+  const family = await fetchFamily(familyId);
+  if (!family) throw new Error('Семейное пространство не найдено.');
+
+  const targetMember = family.members.find(m => m.userId === memberUserId);
+  const targetEmail = targetMember?.email?.trim().toLowerCase();
+  const currentEmail = currentUser.email?.trim().toLowerCase();
+
+  if (
+    memberUserId === currentUser.id || 
+    (targetEmail && currentEmail && targetEmail === currentEmail)
+  ) {
     await leaveFamily(currentUser);
     return null;
   }
 
-  const family = await fetchFamily(familyId);
-  if (!family) throw new Error('Семейное пространство не найдено.');
-
-  const remainingMemberIds = family.memberIds.filter(id => id !== memberUserId);
+  const remainingMembers = family.members.filter(
+    m => m.userId !== memberUserId && (!targetEmail || m.email?.toLowerCase() !== targetEmail)
+  );
+  const remainingMemberIds = remainingMembers.map(m => m.userId);
 
   // Clear removed user's familyId in Supabase
   try {
-    await supabase.from('users').update({ family_id: null }).eq('id', memberUserId);
+    let q = supabase.from('users').update({ family_id: null });
+    if (targetEmail) {
+      q = q.or(`id.eq.${memberUserId},email.eq.${targetEmail}`);
+    } else {
+      q = q.eq('id', memberUserId);
+    }
+    await q;
   } catch (err) {
     console.warn('Supabase remove member update error:', err);
   }
@@ -552,7 +615,13 @@ export async function removeFamilyMember(currentUser: User, memberUserId: string
   // If only 1 member remains (currentUser), dissolve the family
   if (remainingMemberIds.length <= 1) {
     try {
-      await supabase.from('users').update({ family_id: null }).eq('id', currentUser.id);
+      let qMe = supabase.from('users').update({ family_id: null });
+      if (currentEmail) {
+        qMe = qMe.or(`id.eq.${currentUser.id},email.eq.${currentEmail}`);
+      } else {
+        qMe = qMe.eq('id', currentUser.id);
+      }
+      await qMe;
     } catch (err) {
       console.warn('Supabase reset currentUser family_id error:', err);
     }

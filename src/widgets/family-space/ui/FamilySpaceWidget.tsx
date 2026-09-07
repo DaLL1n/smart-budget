@@ -27,7 +27,13 @@ export const FamilySpaceWidget: React.FC = () => {
 
   // Prioritize live fresh query data over cached store, falling back gracefully
   const family = currentUser?.familyId 
-    ? (queryFamily?.id === currentUser.familyId ? queryFamily : storeFamily?.id === currentUser.familyId ? storeFamily : queryFamily || storeFamily)
+    ? (queryFamily?.id === currentUser.familyId 
+        ? queryFamily 
+        : queryFamily === null && !isQueryLoading 
+          ? null 
+          : storeFamily?.id === currentUser.familyId 
+            ? storeFamily 
+            : null)
     : null;
 
   // Query live family expenses for all members

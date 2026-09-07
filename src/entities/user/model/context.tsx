@@ -77,11 +77,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (session?.user) {
           const suUser = session.user;
+          const userEmail = (suUser.email || '').trim().toLowerCase();
           // Load profile from public.users table
           const { data: profileData } = await supabase
             .from('users')
             .select('*')
-            .eq('id', suUser.id)
+            .or(`id.eq.${suUser.id},email.eq.${userEmail}`)
             .maybeSingle();
 
           if (profileData && isMounted) {
@@ -192,10 +193,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Helper to refresh and compare user state from Supabase
     const syncUserRemote = async () => {
       try {
+        const userEmail = currentUser.email?.trim().toLowerCase() || '';
         const { data, error } = await supabase
           .from('users')
           .select('id, name, email, avatar, avatar_color, family_id, is_onboarded, profile')
-          .eq('id', currentUserId)
+          .or(`id.eq.${currentUserId},email.eq.${userEmail}`)
           .maybeSingle();
 
         if (error || !data || !isMounted) return;
@@ -205,14 +207,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (!currentInMemory) return;
 
-        // Check if family_id or other core fields changed remotely
+        // Check if family_id, id or other core fields changed remotely
         if (
           currentInMemory.familyId !== latestFamilyId ||
+          currentInMemory.id !== data.id ||
           currentInMemory.name !== (data.name || currentInMemory.name) ||
           currentInMemory.avatar !== (data.avatar || currentInMemory.avatar)
         ) {
           const updated: User = {
             ...currentInMemory,
+            id: data.id,
             familyId: latestFamilyId,
             name: data.name || currentInMemory.name,
             avatar: data.avatar || currentInMemory.avatar,
@@ -416,11 +420,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: row } = await supabase
           .from('users')
           .select('*')
-          .eq('id', data.user.id)
+          .or(`id.eq.${data.user.id},email.eq.${trimmedEmail}`)
           .maybeSingle();
 
         const loggedUser: User = {
-          id: data.user.id,
+          id: row?.id || data.user.id,
           name: row?.name || data.user.user_metadata?.name || trimmedEmail.split('@')[0] || 'Пользователь',
           email: trimmedEmail,
           avatar: row?.avatar || '🥑',

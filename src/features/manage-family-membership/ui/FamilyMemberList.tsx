@@ -122,7 +122,9 @@ export const FamilyMemberList: React.FC<FamilyMemberListProps> = ({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {family.members.map((member) => {
-          const isCurrent = member.userId === currentUser.id;
+          const isCurrent = 
+            member.userId === currentUser.id || 
+            (!!member.email && !!currentUser.email && member.email.trim().toLowerCase() === currentUser.email.trim().toLowerCase());
           const isRemovingThis = removeMutation.isPending && processingUserId === member.userId;
 
           return (
