@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Receipt,
   ArrowUpDown,
@@ -392,21 +393,24 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
         </div>
       )}
 
-      {/* Confirmation Modal for Deleting Purchase */}
-      {expenseToDelete && (
+      {/* Confirmation Modal for Deleting Purchase via Portal directly to body */}
+      {expenseToDelete && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in"
           onClick={() => {
             if (!deletingId) setExpenseToDelete(null);
           }}
         >
           <div 
-            className="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-5"
+            className="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-5 relative my-auto animate-scale-up"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-modal-title"
           >
+            {/* Top decorative glow */}
+            <div className="absolute -top-12 -right-12 w-36 h-36 bg-rose-500/10 rounded-full blur-2xl pointer-events-none" />
+
             {/* Header */}
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -497,7 +501,8 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
