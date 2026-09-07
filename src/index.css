@@ -21,7 +21,7 @@
   padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
 }
 
-/* Custom Scrollbars: Cross-browser, high-contrast, responsive, and dynamic scroll illumination */
+/* Custom Scrollbars: Fully rounded pill capsule ends, high-contrast, cross-browser */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.45) rgba(15, 23, 42, 0.5);
@@ -29,17 +29,25 @@
   transition: scrollbar-color 0.3s ease;
 }
 
+/* Remove default square arrow buttons on WebKit/Blink */
+.custom-scrollbar::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 /* WebKit (Chrome, Edge, Safari iOS/macOS, Android Chrome, Samsung Internet) */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   display: block;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
-  border-radius: 9999px;
-  border: 1px solid rgba(51, 65, 85, 0.25);
+  background: rgba(15, 23, 42, 0.55);
+  border-radius: 9999px !important;
+  margin: 3px 6px; /* Inset so track rounded caps are clearly visible and detached from box corners */
+  border: 1px solid rgba(51, 65, 85, 0.3);
   transition: background-color 0.3s ease;
 }
 
@@ -48,33 +56,38 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.45);
-  border-radius: 9999px;
-  border: 1px solid rgba(15, 23, 42, 0.4);
+  background-color: rgba(148, 163, 184, 0.5);
+  border-radius: 9999px !important;
+  border: 1.5px solid transparent;
+  background-clip: padding-box; /* Gives breathing room inside track creating a floating rounded pill */
   transition: background-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-/* Touch devices & phones: higher contrast and clear presence */
+/* Touch devices & phones: higher contrast, larger hit-zone and perfectly rounded caps */
 @media (pointer: coarse), (hover: none) {
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.6) rgba(15, 23, 42, 0.65);
+    scrollbar-color: rgba(148, 163, 184, 0.65) rgba(15, 23, 42, 0.7);
   }
 
   .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
     display: block;
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: rgba(15, 23, 42, 0.65);
+    background: rgba(15, 23, 42, 0.7);
+    border-radius: 9999px !important;
+    margin: 2px 6px;
     border: 1px solid rgba(51, 65, 85, 0.4);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.65);
-    border: 1px solid rgba(15, 23, 42, 0.5);
+    background-color: rgba(148, 163, 184, 0.65);
+    border-radius: 9999px !important;
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
   }
 }
 
@@ -82,20 +95,24 @@
 .custom-scrollbar:hover::-webkit-scrollbar-thumb,
 .custom-scrollbar:active::-webkit-scrollbar-thumb,
 .custom-scrollbar[data-scrolling="true"]::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.95) !important;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+  background-color: rgba(16, 185, 129, 0.95) !important;
+  border-radius: 9999px !important;
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
 }
 
 .custom-scrollbar:hover::-webkit-scrollbar-track,
 .custom-scrollbar:active::-webkit-scrollbar-track,
 .custom-scrollbar[data-scrolling="true"]::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: 9999px !important;
 }
 
 .custom-scrollbar:hover,
 .custom-scrollbar:active,
 .custom-scrollbar[data-scrolling="true"] {
-  scrollbar-color: rgba(16, 185, 129, 0.95) rgba(15, 23, 42, 0.75);
+  scrollbar-color: rgba(16, 185, 129, 0.95) rgba(15, 23, 42, 0.85);
 }
 
 @keyframes fadeIn {
