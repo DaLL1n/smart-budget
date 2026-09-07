@@ -341,28 +341,63 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
           </h4>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-          {memberBreakdown.map(({ member, spent, percent }) => (
-            <div key={member.userId} className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-base shrink-0">{member.avatar || '🥑'}</span>
-                  <span className="font-semibold text-slate-200 truncate">{member.name}</span>
+        {memberBreakdown.length > 3 ? (
+          <ScrollContainer
+            orientation="horizontal"
+            className="w-full min-w-0 pt-1"
+            scrollClassName="flex items-stretch gap-3 py-1"
+          >
+            {memberBreakdown.map(({ member, spent, percent }) => (
+              <div
+                key={member.userId}
+                className="w-[240px] sm:w-[260px] lg:w-[calc((100%-1.5rem)/3)] shrink-0 p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2 flex flex-col justify-between"
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-base shrink-0">{member.avatar || '🥑'}</span>
+                    <span className="font-semibold text-slate-200 truncate">{member.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-mono shrink-0">
+                    <span className="text-slate-200 font-bold">{formatRubles(spent)}</span>
+                    <span className="text-slate-500 text-[10px]">({percent}%)</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 font-mono shrink-0">
-                  <span className="text-slate-200 font-bold">{formatRubles(spent)}</span>
-                  <span className="text-slate-500 text-[10px]">({percent}%)</span>
+                <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
+                    style={{ width: `${percent}%` }}
+                  />
                 </div>
               </div>
-              <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
-                  style={{ width: `${percent}%` }}
-                />
+            ))}
+          </ScrollContainer>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            {memberBreakdown.map(({ member, spent, percent }) => (
+              <div
+                key={member.userId}
+                className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2"
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-base shrink-0">{member.avatar || '🥑'}</span>
+                    <span className="font-semibold text-slate-200 truncate">{member.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-mono shrink-0">
+                    <span className="text-slate-200 font-bold">{formatRubles(spent)}</span>
+                    <span className="text-slate-500 text-[10px]">({percent}%)</span>
+                  </div>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300"
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Stores Breakdown (Matches Рейтинг супермаркетов in Personal Analytics) */}
