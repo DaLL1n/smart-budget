@@ -53,6 +53,17 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
 }) => {
   const isBuyerVisible = showBuyer !== undefined ? showBuyer : members.length > 0;
   const [sorting, setSorting] = useState<SortingState>([{ id: 'date', desc: true }]);
+  const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
+
+  const handleConfirmDelete = async () => {
+    if (!expenseToDelete || !onDeleteExpense) return;
+    try {
+      await Promise.resolve(onDeleteExpense(expenseToDelete.id));
+      setExpenseToDelete(null);
+    } catch (err) {
+      console.error('Failed to delete expense:', err);
+    }
+  };
 
   const getInitialPageSize = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 640) {
@@ -184,11 +195,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
               <button
                 type="button"
                 disabled={isDeleting}
-                onClick={() => {
-                  if (window.confirm('Удалить эту запись о расходе?')) {
-                    onDeleteExpense(exp.id);
-                  }
-                }}
+                onClick={() => setExpenseToDelete(exp)}
                 className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors cursor-pointer disabled:opacity-40"
                 title="Удалить запись"
               >
@@ -362,6 +369,114 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
               <span>Вперед</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Deleting Purchase */}
+      {expenseToDelete && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in"
+          onClick={() => {
+            if (!deletingId) setExpenseToDelete(null);
+          }}
+        >
+          <div 
+            className="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-5"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-modal-title"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0 shadow-sm">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 id="delete-modal-title" className="text-base font-bold text-white tracking-tight">
+                    Удаление покупки
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Подтвердите удаление записи
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setExpenseToDelete(null)}
+                disabled={!!deletingId}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
+                title="Закрыть"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Expense Details Card */}
+            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-slate-400">Товар / Категория:</span>
+                <span className="text-xs font-semibold text-slate-200 truncate max-w-[200px]" title={expenseToDelete.title || undefined}>
+                  {expenseToDelete.title || (EXPENSE_CATEGORIES.find(c => c.id === expenseToDelete.category)?.label || 'Покупка')}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-slate-400">Магазин:</span>
+                <span className="text-xs font-medium text-slate-300 truncate max-w-[200px]">
+                  {POPULAR_STORES.find(s => s.id === expenseToDelete.storeId)?.name || expenseToDelete.storeId || 'Продуктовый'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-slate-400">Дата:</span>
+                <span className="text-xs font-mono text-slate-300">
+                  {formatShortDayMonthYear(expenseToDelete.date)}
+                </span>
+              </div>
+              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-slate-300">Сумма:</span>
+                <span className="text-sm font-bold font-mono text-emerald-400">
+                  {formatRubles(expenseToDelete.amount)}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-400 text-center leading-relaxed">
+              Вы уверены, что хотите удалить эту покупку? Действие нельзя отменить.
+            </p>
+
+            {/* Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setExpenseToDelete(null)}
+                disabled={!!deletingId}
+                className="px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Отмена
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={!!deletingId}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-lg shadow-rose-600/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {deletingId === expenseToDelete.id ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Удаление...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Да, удалить</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
