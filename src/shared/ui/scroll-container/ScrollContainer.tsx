@@ -36,10 +36,10 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
 
     if (orientation === 'horizontal' || orientation === 'both') {
       const maxScrollX = el.scrollWidth - el.clientWidth;
-      const hasOverflowX = maxScrollX > 4;
+      const hasOverflowX = maxScrollX > 1;
       setHasHorizontalOverflow(hasOverflowX);
-      setCanScrollLeft(hasOverflowX && el.scrollLeft > 4);
-      setCanScrollRight(hasOverflowX && el.scrollLeft < maxScrollX - 4);
+      setCanScrollLeft(hasOverflowX && el.scrollLeft > 2);
+      setCanScrollRight(hasOverflowX && el.scrollLeft < maxScrollX - 2);
 
       if (hasOverflowX) {
         const widthPct = Math.max(12, Math.min(100, (el.clientWidth / el.scrollWidth) * 100));
@@ -54,10 +54,10 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
 
     if (orientation === 'vertical' || orientation === 'both') {
       const maxScrollY = el.scrollHeight - el.clientHeight;
-      const hasOverflowY = maxScrollY > 4;
+      const hasOverflowY = maxScrollY > 1;
       setHasVerticalOverflow(hasOverflowY);
-      setCanScrollTop(hasOverflowY && el.scrollTop > 4);
-      setCanScrollBottom(hasOverflowY && el.scrollTop < maxScrollY - 4);
+      setCanScrollTop(hasOverflowY && el.scrollTop > 2);
+      setCanScrollBottom(hasOverflowY && el.scrollTop < maxScrollY - 2);
 
       if (hasOverflowY) {
         const heightPct = Math.max(12, Math.min(100, (el.clientHeight / el.scrollHeight) * 100));
@@ -108,6 +108,17 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
     el.scrollTo({ top: targetScroll, behavior: 'smooth' });
   };
 
+  // Re-check whenever children change (e.g. pagination or items change)
+  useEffect(() => {
+    updateScroll();
+    const rafId = requestAnimationFrame(updateScroll);
+    const timer = setTimeout(updateScroll, 60);
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timer);
+    };
+  }, [children, updateScroll]);
+
   useEffect(() => {
     const el = innerRef.current;
     if (!el) return;
@@ -115,14 +126,26 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
     updateScroll();
 
     let ro: ResizeObserver | null = null;
+    const observeAllChildren = () => {
+      if (!ro || !el) return;
+      Array.from(el.children).forEach((child) => ro?.observe(child));
+    };
+
     if (typeof ResizeObserver !== 'undefined') {
       ro = new ResizeObserver(() => {
         updateScroll();
       });
       ro.observe(el);
-      if (el.firstElementChild) {
-        ro.observe(el.firstElementChild);
-      }
+      observeAllChildren();
+    }
+
+    let mo: MutationObserver | null = null;
+    if (typeof MutationObserver !== 'undefined') {
+      mo = new MutationObserver(() => {
+        updateScroll();
+        observeAllChildren();
+      });
+      mo.observe(el, { childList: true, subtree: true, characterData: true });
     }
 
     const handleResize = () => updateScroll();
@@ -130,6 +153,7 @@ export const ScrollContainer = forwardRef<HTMLDivElement, ScrollContainerProps>(
 
     return () => {
       ro?.disconnect();
+      mo?.disconnect();
       window.removeEventListener('resize', handleResize);
     };
   }, [updateScroll]);

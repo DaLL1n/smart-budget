@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { DailyBarItem, formatDayMonth, formatShortDay } from '../../../../entities/expense';
 import { formatRubles } from '../../../../entities/budget';
@@ -62,11 +62,19 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
   }, [items, isPaginated, pageSize]);
 
   const [page, setPage] = useState<number>(defaultPage);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Sync page when items or pageSize changes
   useEffect(() => {
     setPage(defaultPage);
   }, [defaultPage, pageSize]);
+
+  // Reset scroll position when flipping pages
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = 0;
+    }
+  }, [page]);
 
   // Auto-scroll to selectedDate page if set
   useEffect(() => {
@@ -211,6 +219,7 @@ export const DailyBarChart: React.FC<DailyBarChartProps> = ({
       {/* Interactive Day Selection Chips for the Visible Window (only shown if period has 2 or more days) */}
       {items.length >= 2 && visibleItems.length > 0 && (
         <ScrollContainer
+          ref={scrollContainerRef}
           orientation="horizontal"
           className="w-full min-w-0"
           scrollClassName="flex items-center gap-1.5 sm:gap-2 py-1"
