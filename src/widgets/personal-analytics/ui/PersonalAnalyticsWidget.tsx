@@ -41,7 +41,7 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
   currentUser,
   filter,
 }) => {
-  const { data: expenses = [], isLoading } = usePersonalExpensesQuery(currentUser.id);
+  const { data: expenses = [], isLoading, isFetching } = usePersonalExpensesQuery(currentUser.id);
   const { data: personalDeletedExpenses = [] } = usePersonalDeletedExpensesQuery(currentUser.id);
 
   // Subscribe to realtime changes in Supabase expenses table
@@ -111,12 +111,12 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
     return calculateStoreBreakdown(currentViewExpenses);
   }, [currentViewExpenses]);
 
-  if (isLoading && expenses.length === 0) {
+  if ((isLoading || isFetching) && expenses.length === 0) {
     return <AnalyticsDashboardSkeleton isFamily={false} />;
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-6 animate-fade-in">
       
       {/* 3 KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

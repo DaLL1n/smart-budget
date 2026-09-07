@@ -9,7 +9,7 @@ import {
   Navigate,
   ScrollRestoration,
 } from '@tanstack/react-router';
-import { Loader2 } from 'lucide-react';
+import { useIsRestoring } from '@tanstack/react-query';
 import { useAuth, UpdateUserSettingsParams } from '../../entities/user';
 import { CURRENCIES } from '../../entities/budget';
 import { AuthPage } from '../../pages/auth';
@@ -24,11 +24,12 @@ import { AppShellSkeleton } from '../../shared/ui';
 
 const RootLayout: React.FC = () => {
   const { isAuthenticated, currentUser, isLoading, updateUserSettings } = useAuth();
+  const isRestoring = useIsRestoring();
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
   const routerState = useRouterState();
   const navigate = useNavigate();
 
-  if (isLoading) {
+  if (isRestoring || isLoading) {
     return <AppShellSkeleton />;
   }
 
@@ -65,7 +66,7 @@ const RootLayout: React.FC = () => {
   const curr = CURRENCIES[currentUser.profile?.currency || 'RUB'] || CURRENCIES.RUB;
 
   return (
-    <div className="min-h-screen min-w-[375px] flex flex-col bg-slate-950 text-slate-100 selection:bg-emerald-500 selection:text-black">
+    <div className="min-h-screen min-w-[375px] flex flex-col bg-slate-950 text-slate-100 selection:bg-emerald-500 selection:text-black animate-fade-in">
       <ScrollRestoration />
       {/* Top Navigation Bar */}
       <TopNavbar
@@ -93,6 +94,7 @@ const RootLayout: React.FC = () => {
 
 const rootRoute = createRootRoute({
   component: RootLayout,
+  pendingComponent: AppShellSkeleton,
 });
 
 const indexRoute = createRoute({
@@ -143,6 +145,7 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   defaultPreload: 'intent',
+  defaultPendingComponent: AppShellSkeleton,
   defaultErrorComponent: ({ error, reset }) => (
     <ErrorFallbackCard
       error={error as Error}

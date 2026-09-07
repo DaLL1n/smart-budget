@@ -44,7 +44,7 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
   filter,
 }) => {
   const memberIds = useMemo(() => family.members.map(m => m.userId), [family.members]);
-  const { data: expenses = [], isLoading } = useFamilyExpensesQuery(family.id, memberIds);
+  const { data: expenses = [], isLoading, isFetching } = useFamilyExpensesQuery(family.id, memberIds);
   const { data: familyDeletedExpenses = [] } = useFamilyDeletedExpensesQuery(family.id, memberIds);
 
   // Subscribe to realtime changes in Supabase expenses table
@@ -143,12 +143,12 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
     return calculateStoreBreakdown(currentViewExpenses);
   }, [currentViewExpenses]);
 
-  if (isLoading && expenses.length === 0) {
+  if ((isLoading || isFetching) && expenses.length === 0) {
     return <AnalyticsDashboardSkeleton isFamily={true} />;
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
 
       {/* Family KPI Metrics Header: 3 cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">

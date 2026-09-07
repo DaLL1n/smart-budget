@@ -1,16 +1,7 @@
 import React, { useState } from 'react';
-import { QueryClient, useIsRestoring } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { indexedDbPersister } from '../../shared/lib';
-import { AppShellSkeleton } from '../../shared/ui';
-
-const RestoreGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const isRestoring = useIsRestoring();
-  if (isRestoring) {
-    return <AppShellSkeleton />;
-  }
-  return <>{children}</>;
-};
 
 export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [queryClient] = useState(
@@ -47,9 +38,7 @@ export const QueryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
       }}
     >
-      <RestoreGate>
-        {children}
-      </RestoreGate>
+      {children}
     </PersistQueryClientProvider>
   );
 };

@@ -16,6 +16,7 @@ import { DateRangeSelector } from '../../../features/filter-analytics-date';
 import { PersonalAnalyticsWidget } from '../../../widgets/personal-analytics';
 import { FamilyAnalyticsWidget } from '../../../widgets/family-analytics';
 import { QueryErrorBoundary } from '../../../features/error-fallback';
+import { AnalyticsDashboardSkeleton } from '../../../shared/ui';
 
 export type AnalyticsMode = 'personal' | 'family';
 
@@ -55,10 +56,12 @@ export const AnalyticsPage: React.FC = () => {
     }
   }, [queryFamily]);
 
-  if (!currentUser) return null;
+  if (!currentUser) {
+    return <AnalyticsDashboardSkeleton isFamily={activeMode === 'family'} />;
+  }
 
   return (
-    <div className="w-full space-y-4 sm:space-y-6">
+    <div className="w-full space-y-4 sm:space-y-6 animate-fade-in">
       
       {/* Top Header & Sub-section Switcher */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3.5 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-800/80 backdrop-blur-xl shadow-xl">
