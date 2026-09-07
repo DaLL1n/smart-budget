@@ -38,7 +38,6 @@ export const AnalyticsDashboardSkeleton: React.FC<AnalyticsDashboardSkeletonProp
               <div className="w-4 h-4 rounded bg-teal-500/30 shrink-0" />
               <div className="h-3.5 w-36 bg-slate-800 rounded" />
             </div>
-            <div className="h-3 w-16 bg-slate-800/50 rounded" />
           </div>
 
           <div>

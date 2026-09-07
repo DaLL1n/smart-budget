@@ -5,7 +5,8 @@
   - result: 0 errors
 - production_build:
   - command: npm run build (vite build)
-  - result: 0 errors, build completed in 8.22s
+  - result: 0 errors, build completed in 8.07s
 - verification_scope:
-  - ScrollContainer: ползунок при зажатии имеет деликатное свечение shadow-[0_0_3px_rgba(16,185,129,0.25)]
-  - index.css: box-shadow уменьшен до 3px rgba(16, 185, 129, 0.25)
+  - PersonalAnalyticsWidget: убран <span class="text-[10px] font-mono text-slate-400">за {daysInRange} ...</span>
+  - FamilyAnalyticsWidget: убран <span class="text-[10px] font-mono text-slate-400">за {daysInRange} ...</span>
+  - AnalyticsDashboardSkeleton: убран плейсхолдер периода в карточке 2

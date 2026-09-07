@@ -159,9 +159,6 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
               <Calendar className="w-4 h-4 text-teal-400" />
               <span>Средний чек в день</span>
             </div>
-            <span className="text-[10px] font-mono text-slate-400">
-              за {daysInRange} {daysInRange === 1 ? 'день' : daysInRange < 5 ? 'дня' : 'дней'}
-            </span>
           </div>
 
           <div>
