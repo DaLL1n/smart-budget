@@ -144,11 +144,12 @@ export function filterExpensesByDate(
     case 'month':
     default: {
       const currentYearMonth = todayStr.substring(0, 7); // "YYYY-MM"
-      const items = expenses.filter(e => e.date.startsWith(currentYearMonth));
+      const items = expenses.filter(e => e.date.startsWith(currentYearMonth) && e.date <= todayStr);
       const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const daysElapsed = Math.min(daysInMonth, now.getDate());
       const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
       const title = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
-      return { filtered: items, title, daysInRange: daysInMonth };
+      return { filtered: items, title, daysInRange: daysElapsed };
     }
   }
 }
@@ -260,9 +261,15 @@ export function calculateDailyBarDistribution(
     const month = now.getMonth();
     const totalDays = new Date(year, month + 1, 0).getDate();
 
-    for (let day = 1; day <= totalDays; day++) {
+    // Do not show days beyond the current day
+    const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+    const maxDay = isCurrentMonth ? Math.min(totalDays, now.getDate()) : totalDays;
+
+    for (let day = 1; day <= maxDay; day++) {
       const d = new Date(year, month, day);
       const iso = formatDateIso(d);
+      if (iso > todayStr) continue;
+
       const amount = dayAmounts.get(iso) || 0;
       const dayLabel = formatDayWeekday(iso);
 

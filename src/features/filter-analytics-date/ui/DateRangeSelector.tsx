@@ -23,26 +23,31 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
     onChange({ period: p });
   };
 
+  const todayIso = formatDateIso(new Date());
+
   const handleCustomDateChange = (dateVal: string) => {
     if (!dateVal) return;
+    const safeDate = dateVal > todayIso ? todayIso : dateVal;
     onChange({
       period: 'custom_day',
-      customDate: dateVal,
+      customDate: safeDate,
     });
   };
 
   const shiftCustomDay = (days: number) => {
     const baseStr = filter.customDate || (filter.period === 'yesterday' 
       ? formatDateIso(new Date(Date.now() - 86400000))
-      : formatDateIso(new Date()));
+      : todayIso);
     
     const [y, m, d] = baseStr.split('-').map(Number);
     const dateObj = new Date(y, m - 1, d);
     dateObj.setDate(dateObj.getDate() + days);
+    const nextIso = formatDateIso(dateObj);
+    if (nextIso > todayIso) return;
 
     onChange({
       period: 'custom_day',
-      customDate: formatDateIso(dateObj),
+      customDate: nextIso,
     });
   };
 
@@ -115,6 +120,7 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
           <input
             id="analytics-date-picker-input"
             type="date"
+            max={todayIso}
             value={currentDateValue}
             onChange={(e) => handleCustomDateChange(e.target.value)}
             onClick={(e) => {
@@ -130,7 +136,8 @@ export const DateRangeSelector: React.FC<DateRangeSelectorProps> = ({
         <button
           type="button"
           onClick={() => shiftCustomDay(1)}
-          className="p-1.5 rounded-xl bg-slate-950/70 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition-colors cursor-pointer"
+          disabled={currentDateValue >= todayIso}
+          className="p-1.5 rounded-xl bg-slate-950/70 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none text-slate-400 hover:text-slate-200 border border-slate-800 transition-colors cursor-pointer"
           title="Следующий день"
           aria-label="Следующий день"
         >
