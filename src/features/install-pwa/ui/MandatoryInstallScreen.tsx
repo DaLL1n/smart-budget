@@ -157,7 +157,7 @@ export const MandatoryInstallScreen: React.FC = () => {
             className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-extrabold text-base flex items-center justify-center gap-2.5 shadow-2xl shadow-emerald-500/40 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Download className="w-5 h-5 stroke-[2.5]" />
-            <span>Добавить на рабочий стол</span>
+            <span>Установить приложение</span>
           </button>
         )}
       </div>
