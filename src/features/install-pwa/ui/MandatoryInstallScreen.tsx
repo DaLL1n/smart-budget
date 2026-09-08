@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Download, 
   Share2, 
@@ -7,7 +7,8 @@ import {
   Smartphone, 
   Sparkles, 
   CheckCircle2, 
-  Menu
+  Menu,
+  X
 } from 'lucide-react';
 
 export const MandatoryInstallScreen: React.FC = () => {
@@ -20,7 +21,6 @@ export const MandatoryInstallScreen: React.FC = () => {
     const ua = navigator.userAgent || '';
     if (/iPhone|iPad|iPod/i.test(ua)) {
       setPlatform('ios');
-      setShowInstructions(true); // iOS Safari cannot trigger native prompt
     } else if (/SamsungBrowser/i.test(ua)) {
       setPlatform('samsung');
     } else if (/Android/i.test(ua)) {
@@ -44,6 +44,7 @@ export const MandatoryInstallScreen: React.FC = () => {
     const handleAppInstalled = () => {
       setInstalledSuccessfully(true);
       setDeferredPrompt(null);
+      setShowInstructions(false);
     };
 
     window.addEventListener('pwa-install-ready', handleInstallReady);
@@ -74,7 +75,7 @@ export const MandatoryInstallScreen: React.FC = () => {
         setShowInstructions(true);
       }
     } else {
-      // No native prompt available (iOS, or browser hasn't fired beforeinstallprompt yet)
+      // No native prompt available (iOS, or browser without beforeinstallprompt)
       setShowInstructions(true);
     }
   };
@@ -92,8 +93,6 @@ export const MandatoryInstallScreen: React.FC = () => {
           <span>Мобильное приложение</span>
         </div>
       </div>
-
-
 
       {/* Main Center Content */}
       <div className="relative z-10 flex flex-col items-center text-center max-w-sm w-full my-auto">
@@ -118,7 +117,7 @@ export const MandatoryInstallScreen: React.FC = () => {
           Смарт-Бюджет
         </h1>
 
-        <p className="text-sm text-slate-300 mb-6 leading-relaxed">
+        <p className="text-sm text-slate-300 mb-6 leading-relaxed max-w-xs">
           {installedSuccessfully ? (
             <span className="text-emerald-400 font-medium">
               Ярлык успешно добавлен! Откройте приложение с главного экрана вашего телефона.
@@ -127,53 +126,6 @@ export const MandatoryInstallScreen: React.FC = () => {
             'Установите приложение на главный экран, чтобы пользоваться всеми возможностями сервиса.'
           )}
         </p>
-
-
-        {/* Step-by-Step Instructions if native prompt unavailable or requested */}
-        {showInstructions && !installedSuccessfully && (
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full bg-slate-900/95 border border-emerald-500/40 rounded-2xl p-4 text-left mb-6 text-xs text-slate-200 shadow-2xl"
-          >
-            <div className="font-bold text-emerald-400 uppercase tracking-wide flex items-center gap-1.5 mb-3 text-[11px]">
-              <Smartphone className="w-3.5 h-3.5" />
-              {platform === 'ios' ? 'Инструкция для Safari (iPhone)' : 'Как добавить на главный экран'}
-            </div>
-
-            {platform === 'ios' ? (
-              <div className="space-y-2">
-                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-950/60 border border-slate-800">
-                  <span className="w-5 h-5 rounded bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center shrink-0">1</span>
-                  <span>Нажмите кнопку <strong className="text-white">«Поделиться»</strong> <Share2 className="w-3.5 h-3.5 inline mx-1 text-blue-400" /> на панели Safari внизу</span>
-                </div>
-                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-950/60 border border-slate-800">
-                  <span className="w-5 h-5 rounded bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">2</span>
-                  <span>В меню выберите <strong className="text-white">«На экран „Домой“»</strong> <PlusSquare className="w-3.5 h-3.5 inline mx-1 text-emerald-400" /></span>
-                </div>
-                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-950/60 border border-slate-800">
-                  <span className="w-5 h-5 rounded bg-teal-500/20 text-teal-400 font-bold flex items-center justify-center shrink-0">3</span>
-                  <span>В правом верхнем углу нажмите <strong className="text-white">«Добавить»</strong></span>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-950/60 border border-slate-800">
-                  <span className="w-5 h-5 rounded bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">1</span>
-                  <span>Нажмите меню браузера <Menu className="w-3.5 h-3.5 inline mx-1 text-slate-300" /> (кнопка <strong className="text-white">⋮</strong> или <strong className="text-white">☰</strong> в правом углу)</span>
-                </div>
-                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-950/60 border border-slate-800">
-                  <span className="w-5 h-5 rounded bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">2</span>
-                  <span>Выберите <strong className="text-white">«Добавить на главный экран»</strong> (или «Установить приложение»)</span>
-                </div>
-                <div className="flex items-start gap-2.5 p-2 rounded-lg bg-slate-950/60 border border-slate-800">
-                  <span className="w-5 h-5 rounded bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">3</span>
-                  <span>Подтвердите кнопкой <strong className="text-white">«Добавить»</strong></span>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        )}
       </div>
 
       {/* Bottom Mandatory Action Button */}
@@ -193,9 +145,123 @@ export const MandatoryInstallScreen: React.FC = () => {
             <span>Добавить на рабочий стол</span>
           </button>
         )}
-
-
       </div>
+
+      {/* Bottom Sheet Instructions */}
+      <AnimatePresence>
+        {showInstructions && !installedSuccessfully && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowInstructions(false)}
+              className="fixed inset-0 z-[10000] bg-black/75 backdrop-blur-sm"
+            />
+
+            {/* Slide-up Sheet */}
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              className="fixed inset-x-0 bottom-0 z-[10001] bg-slate-900/95 border-t border-slate-800 rounded-t-[28px] p-6 shadow-2xl max-w-md mx-auto backdrop-blur-xl"
+            >
+              {/* Top Handle Indicator */}
+              <div className="w-10 h-1 bg-slate-700 rounded-full mx-auto mb-4" />
+
+              {/* Sheet Header */}
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                    <Smartphone className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white leading-tight">
+                      {platform === 'ios' ? 'Инструкция для Safari' : 'Добавление на главный экран'}
+                    </h3>
+                    <p className="text-[11px] text-slate-400">3 простых шага</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowInstructions(false)}
+                  className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Step Items */}
+              {platform === 'ios' ? (
+                <div className="space-y-2.5 mb-6 text-xs text-slate-200">
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                    <span className="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center shrink-0 text-xs">
+                      1
+                    </span>
+                    <span>
+                      Нажмите <strong className="text-white">«Поделиться»</strong> <Share2 className="w-3.5 h-3.5 inline mx-1 text-blue-400" /> внизу Safari
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                    <span className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0 text-xs">
+                      2
+                    </span>
+                    <span>
+                      Выберите <strong className="text-white">«На экран „Домой“»</strong> <PlusSquare className="w-3.5 h-3.5 inline mx-1 text-emerald-400" />
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                    <span className="w-6 h-6 rounded-lg bg-teal-500/20 text-teal-400 font-bold flex items-center justify-center shrink-0 text-xs">
+                      3
+                    </span>
+                    <span>
+                      В верхнем углу нажмите <strong className="text-white">«Добавить»</strong>
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2.5 mb-6 text-xs text-slate-200">
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                    <span className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0 text-xs">
+                      1
+                    </span>
+                    <span>
+                      Нажмите меню браузера <Menu className="w-3.5 h-3.5 inline mx-1 text-slate-300" /> в правом углу экрана
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                    <span className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0 text-xs">
+                      2
+                    </span>
+                    <span>
+                      Выберите <strong className="text-white">«Добавить на главный экран»</strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                    <span className="w-6 h-6 rounded-lg bg-teal-500/20 text-teal-400 font-bold flex items-center justify-center shrink-0 text-xs">
+                      3
+                    </span>
+                    <span>
+                      Подтвердите нажатием <strong className="text-white">«Добавить»</strong>
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Close / Got it Button */}
+              <button
+                type="button"
+                onClick={() => setShowInstructions(false)}
+                className="w-full py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700/80 active:bg-slate-700 text-white font-semibold text-sm transition-all cursor-pointer"
+              >
+                Понятно
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
