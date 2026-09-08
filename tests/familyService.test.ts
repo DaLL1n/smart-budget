@@ -48,6 +48,7 @@ const mockUserA: User = {
     budgetGoals: ['smart_planning', 'save_money'],
     budgetAlertThreshold: 80,
     notificationSettings: { budgetAlerts: true, weeklyDigest: true, savingTips: true },
+    custom_categories: [],
     updatedAt: new Date().toISOString(),
   },
 };
@@ -73,7 +74,8 @@ const mockUserB: User = {
     budgetGoal: 'eat_healthier',
     budgetGoals: ['eat_healthier'],
     budgetAlertThreshold: 80,
-    notificationSettings: { budgetAlerts: true, weeklyDigest: true, savingTips: true },
+    notificationSettings: { budgetAlerts: true, weeklyDigest: false, savingTips: false },
+    custom_categories: [],
     updatedAt: new Date().toISOString(),
   },
 };

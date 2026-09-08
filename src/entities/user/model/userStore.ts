@@ -1,5 +1,6 @@
 import { Store } from '@tanstack/store';
 import { User } from './types';
+import { CustomCategory } from './schema';
 
 export const LOCAL_SESSION_KEY = 'food_budget_cloud_user';
 
@@ -70,6 +71,32 @@ export const userActions = {
       const updatedUser: User = {
         ...state.currentUser,
         ...updates,
+      };
+      try {
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updatedUser));
+      } catch {}
+      return {
+        ...state,
+        currentUser: updatedUser,
+      };
+    });
+  },
+
+  addCustomCategories: (newCats: CustomCategory[]) => {
+    userStore.setState((state) => {
+      if (!state.currentUser || newCats.length === 0) return state;
+      const currentList = state.currentUser.profile?.custom_categories || [];
+      const existingIds = new Set(currentList.map(c => c.id));
+      const trulyNew = newCats.filter(c => !existingIds.has(c.id));
+      if (trulyNew.length === 0) return state;
+
+      const updatedUser: User = {
+        ...state.currentUser,
+        profile: {
+          ...state.currentUser.profile,
+          custom_categories: [...currentList, ...trulyNew],
+          updatedAt: new Date().toISOString(),
+        },
       };
       try {
         localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updatedUser));

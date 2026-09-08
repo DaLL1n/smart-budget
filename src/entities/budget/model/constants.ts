@@ -1,4 +1,4 @@
-import { Currency, DietaryPreference } from './types';
+import { Currency, DietaryPreference, BudgetGoalOption } from './types';
 
 export const CURRENCIES: Record<string, Currency> = {
   RUB: {
@@ -56,7 +56,7 @@ export const DIETARY_OPTIONS: DietaryPreference[] = [
   { id: 'lactose_free', label: 'Без лактозы', icon: '🥛', description: 'Растительное или безлактозное молоко' },
 ];
 
-export const BUDGET_GOALS = [
+export const BUDGET_GOALS: BudgetGoalOption[] = [
   {
     id: 'save_money',
     title: 'Максимальная экономия',

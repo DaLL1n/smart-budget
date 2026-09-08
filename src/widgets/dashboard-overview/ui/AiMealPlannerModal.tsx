@@ -15,8 +15,8 @@ import {
   ShieldCheck,
   Check
 } from 'lucide-react';
-import { Currency, DietaryOption, BudgetGoal } from '../../../entities/budget';
-import { StoreOption, POPULAR_STORES } from '../../../entities/store';
+import { Currency, DietaryPreference, BudgetGoalOption } from '../../../entities/budget';
+import { StoreOption, POPULAR_STORES, fetchStoresForCity } from '../../../entities/store';
 
 interface AiMealPlannerModalProps {
   isOpen: boolean;
@@ -24,9 +24,10 @@ interface AiMealPlannerModalProps {
   currency: Currency;
   remainingBudget: number;
   daysRemaining: number;
-  userGoals: BudgetGoal[];
-  userStores: StoreOption[];
-  userDiets: DietaryOption[];
+  userGoals: BudgetGoalOption[];
+  userStores?: StoreOption[];
+  userDiets: DietaryPreference[];
+  city?: string;
 }
 
 type MealCycleDays = 3 | 7 | 14;
@@ -39,21 +40,49 @@ export const AiMealPlannerModal: React.FC<AiMealPlannerModalProps> = ({
   remainingBudget,
   daysRemaining,
   userGoals,
-  userStores,
+  userStores = [],
   userDiets,
+  city = 'Москва',
 }) => {
   const [mounted, setMounted] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [selectedCycle, setSelectedCycle] = useState<MealCycleDays>(7);
-  const [selectedStores, setSelectedStores] = useState<string[]>(
-    userStores.length > 0 ? userStores.map(s => s.id) : ['pyaterochka', 'vkusvill']
-  );
+  const [cityStores, setCityStores] = useState<StoreOption[]>(POPULAR_STORES.slice(0, 6));
+  const [isLoadingCityStores, setIsLoadingCityStores] = useState<boolean>(false);
+  const [selectedStores, setSelectedStores] = useState<string[]>(['pyaterochka', 'vkusvill', 'perekrestok']);
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [isReady, setIsReady] = useState<boolean>(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Fetch available stores for user's city when modal opens
+  useEffect(() => {
+    let isMounted = true;
+    const loadCityStores = async () => {
+      setIsLoadingCityStores(true);
+      try {
+        const stores = await fetchStoresForCity(city);
+        if (isMounted && stores.length > 0) {
+          setCityStores(stores);
+          setSelectedStores(stores.slice(0, 3).map(s => s.id));
+        }
+      } catch (err) {
+        console.error('Failed to load stores for city:', err);
+      } finally {
+        if (isMounted) setIsLoadingCityStores(false);
+      }
+    };
+
+    if (isOpen) {
+      loadCityStores();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, city]);
 
   // Lock body and html scroll, and handle Escape key
   useEffect(() => {
@@ -112,8 +141,6 @@ export const AiMealPlannerModal: React.FC<AiMealPlannerModalProps> = ({
       setIsReady(true);
     }, 1500);
   };
-
-  const availableStores = POPULAR_STORES.slice(0, 6);
 
   const modalContent = (
     <div 
@@ -297,36 +324,49 @@ export const AiMealPlannerModal: React.FC<AiMealPlannerModalProps> = ({
         {currentStep === 3 && (
           <div className="space-y-4 animate-fade-in">
             <div className="space-y-2">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Store className="w-3.5 h-3.5 text-slate-400" />
-                <span>Магазины для составления корзины (выберите супермаркеты):</span>
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <Store className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Магазины в г. {city}:</span>
+                </div>
+                <span className="text-[10px] text-emerald-400 font-mono">
+                  выбрано: {selectedStores.length}
+                </span>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                {availableStores.map(store => {
-                  const isChecked = selectedStores.includes(store.id);
-                  return (
-                    <button
-                      key={store.id}
-                      type="button"
-                      onClick={() => toggleStore(store.id)}
-                      className={`p-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer flex items-center justify-between ${
-                        isChecked 
-                          ? 'bg-emerald-500/10 border-emerald-500/50 text-white' 
-                          : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span 
-                          className="w-2.5 h-2.5 rounded-full shrink-0" 
-                          style={{ backgroundColor: store.color }} 
-                        />
-                        <span className="truncate">{store.name}</span>
-                      </div>
-                      {isChecked && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
+
+              {isLoadingCityStores ? (
+                <div className="py-8 flex items-center justify-center gap-2 text-xs text-slate-400">
+                  <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                  <span>Загрузка магазинов города...</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {cityStores.map(store => {
+                    const isChecked = selectedStores.includes(store.id);
+                    return (
+                      <button
+                        key={store.id}
+                        type="button"
+                        onClick={() => toggleStore(store.id)}
+                        className={`p-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer flex items-center justify-between ${
+                          isChecked 
+                            ? 'bg-emerald-500/10 border-emerald-500/50 text-white' 
+                            : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span 
+                            className="w-2.5 h-2.5 rounded-full shrink-0" 
+                            style={{ backgroundColor: store.color }} 
+                          />
+                          <span className="truncate">{store.name}</span>
+                        </div>
+                        {isChecked && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Summary preview badge */}

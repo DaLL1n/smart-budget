@@ -143,8 +143,8 @@ export const FamilyAnalyticsWidget: React.FC<FamilyAnalyticsWidgetProps> = ({
   }, [activeExpenses, filter, familyDailyLimit]);
 
   const categoryBreakdown = useMemo(() => {
-    return calculateCategoryBreakdown(currentViewExpenses);
-  }, [currentViewExpenses]);
+    return calculateCategoryBreakdown(currentViewExpenses, currentUser.profile?.custom_categories);
+  }, [currentViewExpenses, currentUser.profile?.custom_categories]);
 
   const storeBreakdown = useMemo(() => {
     return calculateStoreBreakdown(currentViewExpenses);

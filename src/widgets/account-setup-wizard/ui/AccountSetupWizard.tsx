@@ -21,7 +21,6 @@ import {
   calculateSingleUserBudget, 
   validateStep1Profile 
 } from '../../../entities/budget';
-import { StoreSelector } from '../../../features/select-stores';
 
 export const AccountSetupWizard: React.FC = () => {
   const { currentUser, completeAccountSetup, logout } = useAuth();
@@ -36,12 +35,9 @@ export const AccountSetupWizard: React.FC = () => {
   const [avatar, setAvatar] = useState<string>(currentUser?.avatar || '🥑');
   const [avatarColor, setAvatarColor] = useState<string>(currentUser?.avatarColor || 'from-emerald-400 to-teal-500');
 
-  // Form State - Step 2: Preferences, Stores & Strategy (Multiple for AI)
+  // Form State - Step 2: Preferences & Strategy (Multiple for AI)
   const [dietaryPreferences, setDietaryPreferences] = useState<string[]>(
     currentUser?.profile?.dietaryPreferences || ['standard', 'healthy']
-  );
-  const [favoriteStores, setFavoriteStores] = useState<string[]>(
-    currentUser?.profile?.favoriteStores || ['pyaterochka', 'vkusvill', 'samokat']
   );
   const initialGoals: BudgetGoalType[] = currentUser?.profile?.budgetGoals?.length
     ? currentUser.profile.budgetGoals
@@ -94,7 +90,7 @@ export const AccountSetupWizard: React.FC = () => {
           childrenCount: 0,
           petsCount: 0,
           dietaryPreferences,
-          favoriteStores,
+          favoriteStores: [],
           budgetGoal: budgetGoals[0] || 'smart_planning',
           budgetGoals,
           updatedAt: new Date().toISOString(),
@@ -117,7 +113,7 @@ export const AccountSetupWizard: React.FC = () => {
     { 
       id: 2, 
       title: 'Стратегия и предпочтения', 
-      subtitle: 'Рацион, супермаркеты и цель', 
+      subtitle: 'Рацион и цели планирования', 
       icon: ShoppingBag 
     },
   ];
@@ -484,13 +480,6 @@ export const AccountSetupWizard: React.FC = () => {
                   })}
                 </div>
               </div>
-
-              {/* FSD Feature Integration */}
-              <StoreSelector
-                city={city}
-                selectedStores={favoriteStores}
-                onChange={setFavoriteStores}
-              />
             </motion.div>
           )}
         </AnimatePresence>

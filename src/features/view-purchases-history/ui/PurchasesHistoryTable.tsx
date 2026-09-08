@@ -24,7 +24,8 @@ import {
   EXPENSE_CATEGORIES, 
   formatDateDdMmYy, 
   getLocalDeletedExpenses, 
-  restorePersonalExpense 
+  restorePersonalExpense,
+  useExpenseCategories
 } from '../../../entities/expense';
 import { POPULAR_STORES } from '../../../entities/store';
 import { formatRubles } from '../../../entities/budget';
@@ -65,6 +66,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
   className = '',
 }) => {
   const isBuyerVisible = showBuyer !== undefined ? showBuyer : members.length > 0;
+  const { getCategory } = useExpenseCategories();
   const [sorting, setSorting] = useState<SortingState>([{ id: 'date', desc: true }]);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
 
@@ -196,7 +198,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
         cell: info => {
           const exp = info.row.original;
           const catId = info.getValue();
-          const cat = EXPENSE_CATEGORIES.find(c => c.id === catId) || EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1];
+          const cat = getCategory(catId);
           return (
             <div className="flex items-center gap-2 min-w-0">
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-slate-300 whitespace-nowrap max-w-full">
@@ -309,7 +311,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
     );
 
     return cols;
-  }, [isBuyerVisible, members, currentUserId, onDeleteExpense, deletingId, showDeleted, restoringId]);
+  }, [isBuyerVisible, members, currentUserId, onDeleteExpense, deletingId, showDeleted, restoringId, getCategory]);
 
   const activeData = useMemo(() => {
     if (showDeleted) {
@@ -539,7 +541,7 @@ export const PurchasesHistoryTable: React.FC<PurchasesHistoryTableProps> = ({
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs text-slate-400">Товар / Категория:</span>
                 <span className="text-xs font-semibold text-slate-200 truncate max-w-[200px]" title={expenseToDelete.title || undefined}>
-                  {expenseToDelete.title || (EXPENSE_CATEGORIES.find(c => c.id === expenseToDelete.category)?.label || 'Покупка')}
+                  {expenseToDelete.title || (getCategory(expenseToDelete.category).label || 'Покупка')}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-2">

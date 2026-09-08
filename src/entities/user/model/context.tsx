@@ -3,7 +3,7 @@ import { useStore } from '@tanstack/react-store';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../shared/api';
 import { hashPassword, generateUserId } from '../../../shared/lib';
-import { User, UserProfile, CompleteSetupParams, UpdateUserSettingsParams } from './types';
+import { User, UserProfile, CustomCategory, CompleteSetupParams, UpdateUserSettingsParams } from './types';
 import { DEFAULT_PROFILE } from './constants';
 import { userStore, userActions, LOCAL_SESSION_KEY } from './userStore';
 import { familyKeys } from '../../family/api/familyQueries';
@@ -21,6 +21,7 @@ interface AuthContextType {
   updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
   updateUserSettings: (params: UpdateUserSettingsParams) => Promise<void>;
   completeAccountSetup: (params: CompleteSetupParams) => Promise<void>;
+  addCustomCategories: (newCategories: CustomCategory[]) => Promise<void>;
   /** Re-reads currentUser from localStorage and syncs React state. Call after external familyId changes. */
   refreshUser: () => void;
 }
@@ -650,6 +651,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const addCustomCategories = async (newCategories: CustomCategory[]): Promise<void> => {
+    if (!currentUser || newCategories.length === 0) return;
+    const currentList = currentUser.profile?.custom_categories || [];
+    const existingIds = new Set(currentList.map(c => c.id));
+    const trulyNew = newCategories.filter(c => !existingIds.has(c.id));
+    if (trulyNew.length === 0) return;
+
+    const updatedCategories = [...currentList, ...trulyNew];
+    const updatedProfile: UserProfile = {
+      ...currentUser.profile,
+      custom_categories: updatedCategories,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const updatedUser: User = {
+      ...currentUser,
+      profile: updatedProfile,
+    };
+
+    setCurrentUser(updatedUser);
+    localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(updatedUser));
+    await syncUserToSupabase(updatedUser);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -663,6 +688,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateUserProfile,
         updateUserSettings,
         completeAccountSetup,
+        addCustomCategories,
         refreshUser,
       }}
     >

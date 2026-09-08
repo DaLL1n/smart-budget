@@ -20,9 +20,14 @@ import { TopNavbar, ActiveNavTab } from '../../widgets/top-navbar';
 import { MobileBottomBar } from '../../widgets/mobile-bottom-bar';
 import { EditBudgetModal } from '../../features/manage-budget';
 import { AddExpenseModal } from '../../features/add-expense';
-import { useCreateExpenseMutation } from '../../entities/expense';
+import { 
+  useCreateExpenseMutation,
+  EXPENSE_CATEGORIES,
+  ExpenseCategory
+} from '../../entities/expense';
 import { POPULAR_STORES } from '../../entities/store';
 import { AppShellSkeleton } from '../../shared/ui';
+import { ErrorFallbackCard } from '../../features/error-fallback';
 import { MandatoryInstallScreen } from '../../features/install-pwa';
 
 const RootLayout: React.FC = () => {
@@ -50,15 +55,33 @@ const RootLayout: React.FC = () => {
   const navigate = useNavigate();
   const createMutation = useCreateExpenseMutation(currentUser?.id || '');
 
-  const handleAddExpense = async (amount: number, note?: string, storeId?: string) => {
+  const handleAddExpense = async (amount: number, note?: string, storeId?: string, category?: ExpenseCategory) => {
     if (!currentUser) return;
     await createMutation.mutateAsync({
       amount,
-      category: 'other',
+      category: category || 'other',
       storeId: storeId || 'pyaterochka',
       title: note || 'Покупка продуктов',
       date: new Date().toISOString().split('T')[0],
     });
+  };
+
+  const handleAddBatchExpenses = async (
+    items: Array<{ category: ExpenseCategory; amount: number }>,
+    storeId: string
+  ) => {
+    if (!currentUser || items.length === 0) return;
+    const today = new Date().toISOString().split('T')[0];
+    for (const item of items) {
+      const catConfig = EXPENSE_CATEGORIES.find(c => c.id === item.category);
+      await createMutation.mutateAsync({
+        amount: item.amount,
+        category: item.category,
+        storeId: storeId || 'pyaterochka',
+        title: catConfig?.label || 'Покупка продуктов',
+        date: today,
+      });
+    }
   };
 
   const isSkeletonPreview = typeof window !== 'undefined' && window.location.search.includes('skeleton=true');
@@ -139,7 +162,8 @@ const RootLayout: React.FC = () => {
         onClose={() => setShowAddExpenseModal(false)}
         currency={curr}
         onAddExpense={handleAddExpense}
-        userStores={userStores}
+        onAddBatchExpenses={handleAddBatchExpenses}
+        city={currentUser.profile?.city || 'Москва'}
       />
 
       {/* Global Settings & Budget Modal */}

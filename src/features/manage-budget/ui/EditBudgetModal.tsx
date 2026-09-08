@@ -24,7 +24,6 @@ import {
   calculateSingleUserBudget 
 } from '../../../entities/budget';
 import { User, UserProfile, AVATAR_OPTIONS, UpdateUserSettingsParams } from '../../../entities/user';
-import { StoreSelector } from '../../select-stores';
 
 export type SettingsTabId = 'budget' | 'strategy' | 'account' | 'notifications';
 
@@ -180,7 +179,7 @@ export const EditBudgetModal: React.FC<SettingsModalProps> = ({
 
   const tabs = [
     { id: 'budget' as const, label: 'Бюджет и лимиты', icon: Coins, desc: 'Сумма, пресеты и лимиты' },
-    { id: 'strategy' as const, label: 'Стратегия и рацион', icon: Target, desc: 'Цели, диета и магазины' },
+    { id: 'strategy' as const, label: 'Стратегия и рацион', icon: Target, desc: 'Цели и особенности питания' },
     { id: 'account' as const, label: 'Аккаунт и профиль', icon: UserIcon, desc: 'Имя, аватар и город' },
     { id: 'notifications' as const, label: 'Оповещения', icon: Bell, desc: 'Лимиты и оповещения' },
   ];
@@ -410,13 +409,6 @@ export const EditBudgetModal: React.FC<SettingsModalProps> = ({
                     })}
                   </div>
                 </div>
-
-                {/* Integrated Store Selector Feature */}
-                <StoreSelector
-                  city={city}
-                  selectedStores={favoriteStores}
-                  onChange={setFavoriteStores}
-                />
               </div>
             )}
 
@@ -488,17 +480,6 @@ export const EditBudgetModal: React.FC<SettingsModalProps> = ({
                       className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-10 pr-3.5 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Заметки и комментарии к рациону</label>
-                  <textarea
-                    rows={2}
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Например: покупка продуктов по субботам, доставка свежего молока..."
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 resize-none"
-                  />
                 </div>
               </div>
             )}

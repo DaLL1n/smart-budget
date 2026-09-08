@@ -232,7 +232,7 @@ function normalizeCityKey(cityName: string): string {
 }
 
 export async function fetchStoresForCity(cityName: string): Promise<StoreOption[]> {
-  await new Promise(resolve => setTimeout(resolve, 200));
+  await new Promise(resolve => setTimeout(resolve, 150));
 
   const key = normalizeCityKey(cityName);
   const citySpecific = CITY_STORE_DATABASE[key] || [
@@ -249,10 +249,16 @@ export async function fetchStoresForCity(cityName: string): Promise<StoreOption[
     { id: 'yarche', name: 'Ярче!', category: 'supermarket', color: '#f97316' },
   ];
 
+  const distances = ['0.4 км', '0.8 км', '1.2 км', '1.7 км', '2.3 км', '3.1 км', '3.8 км', '4.5 км', '5.2 км', '6.0 км'];
+
   const storeMap = new Map<string, StoreOption>();
-  [...NATIONWIDE_STORES, ...citySpecific].forEach(store => {
+  [...citySpecific, ...NATIONWIDE_STORES].forEach(store => {
     if (!storeMap.has(store.id)) {
-      storeMap.set(store.id, store);
+      const idx = storeMap.size;
+      storeMap.set(store.id, {
+        ...store,
+        distance: store.distance || distances[idx] || `${(3 + idx * 0.4).toFixed(1)} км`,
+      });
     }
   });
 

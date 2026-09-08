@@ -103,8 +103,8 @@ export const PersonalAnalyticsWidget: React.FC<PersonalAnalyticsWidgetProps> = (
   const isOverBudget = kpis.totalSpent > monthlyBudget;
 
   const categoryBreakdown = useMemo(() => {
-    return calculateCategoryBreakdown(currentViewExpenses);
-  }, [currentViewExpenses]);
+    return calculateCategoryBreakdown(currentViewExpenses, currentUser.profile?.custom_categories);
+  }, [currentViewExpenses, currentUser.profile?.custom_categories]);
 
   const dailyBars = useMemo(() => {
     return calculateDailyBarDistribution(expenses, filter, dailyTarget);

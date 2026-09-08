@@ -2,6 +2,8 @@ import {
   Expense, 
   DateFilterState, 
   EXPENSE_CATEGORIES, 
+  ExpenseCategoryConfig,
+  getCategoryConfig,
   CategoryBreakdownItem, 
   DailyBarItem, 
   StoreRankItem, 
@@ -198,7 +200,10 @@ export function calculatePersonalKPIs(
 /**
  * Calculate Category breakdown with percentages for SVG Donut Chart
  */
-export function calculateCategoryBreakdown(expenses: Expense[]): CategoryBreakdownItem[] {
+export function calculateCategoryBreakdown(
+  expenses: Expense[],
+  customCategories?: ExpenseCategoryConfig[]
+): CategoryBreakdownItem[] {
   const total = expenses.reduce((sum, e) => sum + e.amount, 0);
   if (total === 0) return [];
 
@@ -214,18 +219,17 @@ export function calculateCategoryBreakdown(expenses: Expense[]): CategoryBreakdo
 
   const items: CategoryBreakdownItem[] = [];
 
-  for (const cat of EXPENSE_CATEGORIES) {
-    const data = categoryMap.get(cat.id);
-    if (data && data.amount > 0) {
+  categoryMap.forEach((data, catId) => {
+    if (data.amount > 0) {
       const percentage = Math.round((data.amount / total) * 100);
       items.push({
-        category: cat,
+        category: getCategoryConfig(catId, customCategories),
         amount: data.amount,
         percentage,
         count: data.count,
       });
     }
-  }
+  });
 
   // Sort descending by amount
   return items.sort((a, b) => b.amount - a.amount);

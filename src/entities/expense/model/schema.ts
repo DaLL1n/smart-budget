@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const expenseCategorySchema = z.enum([
+export const defaultExpenseCategorySchema = z.enum([
   'vegetables_fruits',
   'dairy_cheese',
   'meat_fish',
@@ -9,7 +9,10 @@ export const expenseCategorySchema = z.enum([
   'ready_food',
   'other',
 ]);
-export type ExpenseCategory = z.infer<typeof expenseCategorySchema>;
+export type DefaultExpenseCategory = z.infer<typeof defaultExpenseCategorySchema>;
+
+export const expenseCategorySchema = z.string().min(1);
+export type ExpenseCategory = string;
 
 export const receiptItemSchema = z.object({
   name: z.string().min(1),
@@ -54,14 +57,15 @@ export const dateFilterSchema = z.object({
 export type DateFilterState = z.infer<typeof dateFilterSchema>;
 
 export interface ExpenseCategoryConfig {
-  id: ExpenseCategory;
+  id: string;
   label: string;
   icon: string;
   color: string;
   badgeBg: string;
+  isCustom?: boolean;
 }
 
-export const EXPENSE_CATEGORIES: ExpenseCategoryConfig[] = [
+export const DEFAULT_EXPENSE_CATEGORIES: ExpenseCategoryConfig[] = [
   { id: 'vegetables_fruits', label: 'Овощи и фрукты', icon: '🥦', color: '#10B981', badgeBg: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
   { id: 'dairy_cheese', label: 'Молочка и сыры', icon: '🧀', color: '#38BDF8', badgeBg: 'bg-sky-500/15 text-sky-300 border-sky-500/30' },
   { id: 'meat_fish', label: 'Мясо и рыба', icon: '🥩', color: '#F43F5E', badgeBg: 'bg-rose-500/15 text-rose-300 border-rose-500/30' },
@@ -70,6 +74,53 @@ export const EXPENSE_CATEGORIES: ExpenseCategoryConfig[] = [
   { id: 'ready_food', label: 'Готовая еда', icon: '🍱', color: '#EC4899', badgeBg: 'bg-pink-500/15 text-pink-300 border-pink-500/30' },
   { id: 'other', label: 'Прочее', icon: '🛒', color: '#64748B', badgeBg: 'bg-slate-500/15 text-slate-300 border-slate-500/30' },
 ];
+
+export const EXPENSE_CATEGORIES = DEFAULT_EXPENSE_CATEGORIES;
+
+const HARMONIOUS_BADGES = [
+  { hex: '#6366F1', badge: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' },
+  { hex: '#14B8A6', badge: 'bg-teal-500/15 text-teal-300 border-teal-500/30' },
+  { hex: '#F97316', badge: 'bg-orange-500/15 text-orange-300 border-orange-500/30' },
+  { hex: '#8B5CF6', badge: 'bg-violet-500/15 text-violet-300 border-violet-500/30' },
+  { hex: '#84CC16', badge: 'bg-lime-500/15 text-lime-300 border-lime-500/30' },
+  { hex: '#D946EF', badge: 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30' },
+  { hex: '#06B6D4', badge: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30' },
+  { hex: '#EAB308', badge: 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30' },
+];
+
+export function buildCategoryBadge(color?: string, id?: string): { color: string; badgeBg: string } {
+  if (color) {
+    const found = HARMONIOUS_BADGES.find(c => c.hex.toLowerCase() === color.toLowerCase());
+    if (found) return { color: found.hex, badgeBg: found.badge };
+  }
+  let hash = 0;
+  const str = id || 'cat';
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const item = HARMONIOUS_BADGES[Math.abs(hash) % HARMONIOUS_BADGES.length];
+  return { color: color || item.hex, badgeBg: item.badge };
+}
+
+export function getCategoryConfig(id: string, customCategories?: ExpenseCategoryConfig[]): ExpenseCategoryConfig {
+  if (customCategories && customCategories.length > 0) {
+    const custom = customCategories.find(c => c.id === id);
+    if (custom) return custom;
+  }
+  const standard = DEFAULT_EXPENSE_CATEGORIES.find(c => c.id === id);
+  if (standard) return standard;
+
+  const style = buildCategoryBadge(undefined, id);
+  return {
+    id,
+    label: id.replace(/_/g, ' '),
+    icon: '🏷️',
+    color: style.color,
+    badgeBg: style.badgeBg,
+    isCustom: true,
+  };
+}
 
 export interface CategoryBreakdownItem {
   category: ExpenseCategoryConfig;

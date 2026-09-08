@@ -14,6 +14,7 @@ export const storeOptionSchema = z.object({
   name: z.string(),
   category: storeCategorySchema,
   color: z.string(),
+  distance: z.string().optional(),
 });
 export type StoreOption = z.infer<typeof storeOptionSchema>;
 

@@ -22,6 +22,16 @@ export const userNotificationSettingsSchema = z.object({
 });
 export type UserNotificationSettings = z.infer<typeof userNotificationSettingsSchema>;
 
+export const customCategorySchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  icon: z.string().default('🏷️'),
+  color: z.string().default('#94A3B8'),
+  badgeBg: z.string().default('bg-slate-500/15 text-slate-300 border-slate-500/30'),
+  isCustom: z.boolean().default(true),
+});
+export type CustomCategory = z.infer<typeof customCategorySchema>;
+
 export const userProfileSchema = z.object({
   currency: currencyCodeSchema,
   monthlyBudget: z.number().nonnegative().default(35000),
@@ -42,6 +52,7 @@ export const userProfileSchema = z.object({
   }),
   city: z.string().optional(),
   notes: z.string().optional(),
+  custom_categories: z.array(customCategorySchema).default([]),
   familyId: z.string().nullable().optional(),
   familyRole: z.enum(['owner', 'member']).optional(),
   updatedAt: z.string().default(() => new Date().toISOString()),

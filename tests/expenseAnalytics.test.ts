@@ -8,6 +8,10 @@ if (typeof globalThis.localStorage === 'undefined') {
     setItem: (key: string, val: string) => storage.set(key, val),
     removeItem: (key: string) => storage.delete(key),
     clear: () => storage.clear(),
+    key: (i: number) => Array.from(storage.keys())[i] || null,
+    get length() {
+      return storage.size;
+    },
   };
 }
 
@@ -20,7 +24,7 @@ import {
   calculateCategoryBreakdown, 
   calculateDailyBarDistribution, 
   calculateStoreBreakdown,
-  fetchPersonalExpenses,
+  getLocalExpenses,
   createPersonalExpense,
   deletePersonalExpense,
   formatDayMonth
@@ -120,11 +124,11 @@ async function runTests() {
   });
   assert.strictEqual(created.amount, 500);
 
-  const afterAdd = await fetchPersonalExpenses('u1');
+  const afterAdd = getLocalExpenses('u1');
   assert.ok(afterAdd.some(e => e.id === created.id), 'Новый расход должен быть в списке');
 
   await deletePersonalExpense(created.id, 'u1');
-  const afterDelete = await fetchPersonalExpenses('u1');
+  const afterDelete = getLocalExpenses('u1');
   assert.ok(!afterDelete.some(e => e.id === created.id), 'Расход должен быть удален');
   console.log('[PASS 7/8] Добавление и удаление расхода в expenseService');
 

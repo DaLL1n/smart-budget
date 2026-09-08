@@ -8,12 +8,14 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../entities/user';
 import { CURRENCIES, DIETARY_OPTIONS, BUDGET_GOALS } from '../../../entities/budget';
-import { POPULAR_STORES } from '../../../entities/store';
 import { AddExpenseModal } from '../../../features/add-expense';
 import { 
   usePersonalExpensesQuery, 
   useCreateExpenseMutation,
-  filterExpensesByDate 
+  filterExpensesByDate,
+  EXPENSE_CATEGORIES,
+  ExpenseCategory,
+  getCategoryConfig
 } from '../../../entities/expense';
 import { AiMealPlannerModal } from './AiMealPlannerModal';
 
@@ -59,18 +61,35 @@ export const DashboardOverview: React.FC = () => {
     ? [profile.budgetGoal] 
     : ['smart_planning'];
   const userGoals = BUDGET_GOALS.filter(g => selectedGoalIds.includes(g.id as any));
-  const userStores = POPULAR_STORES.filter(s => profile?.favoriteStores?.includes(s.id));
   const userDiets = DIETARY_OPTIONS.filter(d => profile?.dietaryPreferences?.includes(d.id));
 
-  const handleAddExpense = async (amount: number, note?: string, storeId?: string) => {
+  const handleAddExpense = async (amount: number, note?: string, storeId?: string, category?: ExpenseCategory) => {
     if (!currentUser) return;
     await createMutation.mutateAsync({
       amount,
-      category: 'other',
-      storeId: storeId || userStores[0]?.id || 'pyaterochka',
+      category: category || 'other',
+      storeId: storeId || 'pyaterochka',
       title: note || 'Покупка продуктов',
       date: new Date().toISOString().split('T')[0],
     });
+  };
+
+  const handleAddBatchExpenses = async (
+    items: Array<{ category: ExpenseCategory; amount: number }>,
+    storeId: string
+  ) => {
+    if (!currentUser || items.length === 0) return;
+    const today = new Date().toISOString().split('T')[0];
+    for (const item of items) {
+      const catConfig = getCategoryConfig(item.category, currentUser.profile?.custom_categories);
+      await createMutation.mutateAsync({
+        amount: item.amount,
+        category: item.category,
+        storeId: storeId || 'pyaterochka',
+        title: catConfig?.label || 'Покупка продуктов',
+        date: today,
+      });
+    }
   };
 
   return (
@@ -156,14 +175,9 @@ export const DashboardOverview: React.FC = () => {
         <div className="lg:col-span-6 space-y-5 sm:space-y-6">
           {/* Quick Expense Action Card (opens AddExpenseModal) */}
           <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
-                <Receipt className="w-4 h-4 text-emerald-400" />
-                <span>Учет покупок продуктов</span>
-              </div>
-              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider bg-slate-950/70 border border-slate-800/80 px-2 py-0.5 rounded-md">
-                Чек или вручную
-              </span>
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
+              <Receipt className="w-4 h-4 text-emerald-400" />
+              <span>Учет покупок продуктов</span>
             </div>
 
             <p className="text-xs text-slate-400 leading-relaxed">
@@ -184,7 +198,7 @@ export const DashboardOverview: React.FC = () => {
           <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
               <Target className="w-4 h-4 text-emerald-400" />
-              <span>Профиль питания и магазины</span>
+              <span>Профиль питания</span>
             </div>
 
             {/* Goals */}
@@ -222,26 +236,6 @@ export const DashboardOverview: React.FC = () => {
                 )}
               </div>
             </div>
-
-            {/* Favorite Stores */}
-            <div className="space-y-1.5">
-              <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Любимые магазины</div>
-              <div className="flex flex-wrap gap-1.5">
-                {userStores.length > 0 ? (
-                  userStores.map(s => (
-                    <span 
-                      key={s.id} 
-                      className="px-2.5 py-1 rounded-lg bg-slate-950/70 border border-slate-800/80 text-[11px] text-slate-300 flex items-center gap-1.5"
-                    >
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
-                      <span>{s.name}</span>
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-[11px] text-slate-500">Любые супермаркеты</span>
-                )}
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -254,8 +248,8 @@ export const DashboardOverview: React.FC = () => {
         remainingBudget={remainingBudget}
         daysRemaining={daysRemaining}
         userGoals={userGoals}
-        userStores={userStores}
         userDiets={userDiets}
+        city={profile?.city || 'Москва'}
       />
 
       {/* Add Expense Modal */}
@@ -264,7 +258,8 @@ export const DashboardOverview: React.FC = () => {
         onClose={() => setIsAddExpenseOpen(false)}
         currency={curr}
         onAddExpense={handleAddExpense}
-        userStores={userStores}
+        onAddBatchExpenses={handleAddBatchExpenses}
+        city={profile?.city || 'Москва'}
       />
     </div>
   );

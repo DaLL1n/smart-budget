@@ -31,6 +31,7 @@ export const DEFAULT_PROFILE: UserProfile = {
   },
   city: 'Москва',
   notes: 'Планируем закупаться раз в неделю и докупать свежее у дома',
+  custom_categories: [],
   updatedAt: new Date().toISOString(),
 };
 
@@ -68,6 +69,7 @@ export const DEMO_PRESETS: DemoPreset[] = [
         },
         city: 'Санкт-Петербург',
         notes: 'Фокус на спортпит, гречку, яйца и курицу по акциям',
+        custom_categories: [],
         updatedAt: new Date().toISOString(),
       },
     },
@@ -105,6 +107,7 @@ export const DEMO_PRESETS: DemoPreset[] = [
         },
         city: 'Москва',
         notes: 'Большая закупка в гипермаркете по субботам + свежая молочка',
+        custom_categories: [],
         updatedAt: new Date().toISOString(),
       },
     },
@@ -142,6 +145,7 @@ export const DEMO_PRESETS: DemoPreset[] = [
         },
         city: 'Казань',
         notes: 'Органические продукты, сезонные ягоды, микрозелень',
+        custom_categories: [],
         updatedAt: new Date().toISOString(),
       },
     },
