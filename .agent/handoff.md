@@ -1,17 +1,21 @@
-# HANDOFF CONTRACT
-- source_agent: feature-developer
-- status: SUCCESS
-- artifacts_produced:
-  - GEMINI.md
-  - src/widgets/dashboard-overview/ui/DashboardOverview.tsx
-  - src/widgets/dashboard-overview/ui/AiMealPlannerModal.tsx
-  - src/features/add-expense/ui/AddExpenseForm.tsx
-  - src/index.css
-- pending_tasks: []
-- blockers_or_notes: 
-  1) В Конституцию проекта (GEMINI.md) официально добавлен Раздел 11 «Продуктовые и смысловые правила интерфейса (Product UX Guardrails)».
-  2) В основную карточку бюджета возвращены четкие плановые ориентиры: «Лимит в неделю» и «Лимит в день».
-  3) Исключены любые упоминания «в среднем в день» и дублирующие плашки остатка.
-  4) Модалка планирования («Шеф-меню и умная корзина») содержит 3-шаговый мастер подготовки, рендерится через React Portal в document.body, закрывает шапку сайта и имеет 16px отступы от краев экрана.
-  5) Дашборд изолирован как 100% личное пространство на 1 персону.
-  6) Сервер разработки активен на http://localhost:3000/.
+# Манифест передачи состояния: Обязательная установка PWA на рабочий стол
+
+- **source_agent**: feature-developer
+- **status**: SUCCESS
+- **artifacts_produced**:
+  - `src/features/install-pwa/ui/MandatoryInstallScreen.tsx` (полноэкранный блокирующий экран с кнопкой добавления на рабочий стол)
+  - `src/features/install-pwa/index.ts`
+  - `src/app/router/router.tsx` (проверка `isMobile && !isStandalone`: блокировка контента, меню и скролла до запуска с домашнего экрана)
+  - `public/manifest.json` (скоуп, maskable иконки, standalone режим)
+  - `public/sw.js` (Service Worker для критериев PWA)
+  - `src/main.tsx` (регистрация Service Worker)
+  - `index.html` (метатеги Apple и PWA)
+  - Удалена вся ненужная логика перехватов скролла: удалены `useMobileScrollStabilizer.ts`, `MobileScrollContainer`.
+- **pending_tasks**: None
+- **blockers_or_notes**:
+  - Реализовано строго по требованию пользователя:
+    1. Если пользователь открывает сервис из браузера телефона (не через ярлык PWA), загружается **исключительно** экран добавления на рабочий стол `<MandatoryInstallScreen />`.
+    2. Никакой контент, навигационные меню (`TopNavbar`, `MobileBottomBar`), карточки и фоновые скроллы не отображаются и не загружаются.
+    3. Модалку невозможно закрыть или пропустить (нет кнопки закрытия / отмены).
+    4. При нажатии на главную кнопку «Добавить на рабочий стол» вызывается нативный диалог установки (`beforeinstallprompt`) на Android/Samsung/Chrome, либо пошаговая наглядная инструкция для iOS Safari и ручного добавления.
+    5. После добавления на рабочий стол и открытия через ярлык активируется режим `display-mode: standalone`, и приложение открывается на полный экран без адресных строк и всплывающих панелей браузера.

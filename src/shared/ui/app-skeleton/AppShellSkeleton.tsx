@@ -14,7 +14,7 @@ export const AppShellSkeleton: React.FC = () => {
   const isFamilyMode = useSyncExternalStore(subscribe, getIsFamily, () => false);
 
   return (
-    <div className="min-h-screen min-w-[375px] flex flex-col bg-slate-950 text-slate-100 selection:bg-emerald-500 selection:text-black animate-fade-in">
+    <div className="min-h-screen min-h-dvh min-w-[375px] flex flex-col bg-slate-950 text-slate-100 selection:bg-emerald-500 selection:text-black">
       {/* 1. Header / TopNavbar Skeleton - Exactly mirrors TopNavbar */}
       <header className="w-full bg-slate-900/90 border-b border-slate-800/80 backdrop-blur-2xl sticky top-0 z-40 shadow-lg shadow-black/40">
         {/* Top Header Row */}

@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { 
   Target, 
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  Plus,
+  Receipt
 } from 'lucide-react';
 import { useAuth } from '../../../entities/user';
 import { CURRENCIES, DIETARY_OPTIONS, BUDGET_GOALS } from '../../../entities/budget';
 import { POPULAR_STORES } from '../../../entities/store';
-import { AddExpenseForm } from '../../../features/add-expense';
+import { AddExpenseModal } from '../../../features/add-expense';
 import { 
   usePersonalExpensesQuery, 
   useCreateExpenseMutation,
@@ -22,6 +24,8 @@ export const DashboardOverview: React.FC = () => {
 
   // AI Meal Planner Modal state
   const [isPlannerOpen, setIsPlannerOpen] = useState<boolean>(false);
+  // Add Expense Modal state
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState<boolean>(false);
 
   if (!currentUser) return null;
 
@@ -150,12 +154,31 @@ export const DashboardOverview: React.FC = () => {
 
         {/* Right Column (lg: 6 cols): Quick Add Form + Preferences Profile */}
         <div className="lg:col-span-6 space-y-5 sm:space-y-6">
-          {/* Quick Expense Entry */}
-          <AddExpenseForm
-            currency={curr}
-            onAddExpense={handleAddExpense}
-            userStores={userStores}
-          />
+          {/* Quick Expense Action Card (opens AddExpenseModal) */}
+          <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800/80 backdrop-blur-xl shadow-xl flex flex-col justify-between space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
+                <Receipt className="w-4 h-4 text-emerald-400" />
+                <span>Учет покупок продуктов</span>
+              </div>
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider bg-slate-950/70 border border-slate-800/80 px-2 py-0.5 rounded-md">
+                Чек или вручную
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Внесите траты на продукты или отсканируйте чек — баланс и лимиты на неделю и день пересчитаются автоматически.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setIsAddExpenseOpen(true)}
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-[0.98] cursor-pointer"
+            >
+              <Plus className="w-4 h-4 text-slate-950" />
+              <span>Добавить покупку</span>
+            </button>
+          </div>
 
           {/* Compact Preferences & Diet Profile Card */}
           <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800/80 backdrop-blur-xl shadow-xl space-y-4">
@@ -233,6 +256,15 @@ export const DashboardOverview: React.FC = () => {
         userGoals={userGoals}
         userStores={userStores}
         userDiets={userDiets}
+      />
+
+      {/* Add Expense Modal */}
+      <AddExpenseModal
+        isOpen={isAddExpenseOpen}
+        onClose={() => setIsAddExpenseOpen(false)}
+        currency={curr}
+        onAddExpense={handleAddExpense}
+        userStores={userStores}
       />
     </div>
   );

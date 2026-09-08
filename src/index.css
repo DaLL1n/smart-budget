@@ -16,15 +16,6 @@
 }
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
-    overflow-x: clip;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-gutter: stable;
-  }
-
   html, body {
     min-width: 375px;
     background-color: #090D16;
@@ -32,11 +23,18 @@
     font-family: 'MontserratDigits', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Respect iPhone Home Bar and Android/Samsung Gesture Pill Navigation */
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
   }
 
   body {
+    min-height: 100%;
     overflow-x: clip;
   }
 

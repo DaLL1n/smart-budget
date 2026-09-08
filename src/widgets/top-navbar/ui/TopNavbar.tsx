@@ -40,7 +40,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   ];
 
   return (
-    <header className="w-full bg-slate-900/90 border-b border-slate-800/80 backdrop-blur-2xl sticky top-0 z-40 shadow-lg shadow-black/40">
+    <header className="w-full shrink-0 bg-slate-900/90 border-b border-slate-800/80 backdrop-blur-2xl sticky top-0 z-40 shadow-lg shadow-black/40 pt-[env(safe-area-inset-top,0px)]">
       {/* Top Header Row */}
       <div className="max-w-[1440px] mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
         
@@ -75,7 +75,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
         {/* Desktop Navigation Links */}
         <LayoutGroup id="topNavDesktop">
-          <nav className="hidden sm:flex items-center gap-1 bg-slate-950/70 p-1 rounded-xl border border-slate-800/80">
+          <nav className="hidden md:flex items-center gap-1 bg-slate-950/70 p-1 rounded-xl border border-slate-800/80">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -145,50 +145,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           </div>
         </div>
 
-      </div>
-
-      {/* Mobile Navigation Sub-Bar with Full Page Names under Header */}
-      <div className="sm:hidden px-3 pb-2.5 pt-0.5">
-        <LayoutGroup id="topNavMobile">
-          <nav className="flex items-center justify-between gap-1 bg-slate-950/70 p-1 rounded-xl border border-slate-800/80 w-full">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => onTabChange(item.id)}
-                  className={`relative flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer leading-none ${
-                    isActive
-                      ? 'text-emerald-300'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeNavTabIndicatorMobile"
-                      className="absolute inset-0 rounded-lg bg-emerald-500/15 border border-emerald-500/40 shadow-sm"
-                      transition={{
-                        type: 'spring',
-                        stiffness: 500,
-                        damping: 35
-                      }}
-                    />
-                  )}
-
-                  <span className="relative z-10 inline-flex items-center gap-1.5 leading-none">
-                    <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
-                    <span className="whitespace-nowrap leading-none">{item.label}</span>
-                    {item.badge && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 self-center mt-[2px]" />
-                    )}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
-        </LayoutGroup>
       </div>
     </header>
   );
