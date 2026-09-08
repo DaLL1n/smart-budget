@@ -22,6 +22,7 @@
     text-size-adjust: 100%;
     overflow-x: clip;
     -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
   }
 
   html, body {
