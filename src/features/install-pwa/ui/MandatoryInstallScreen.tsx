@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { 
   Download, 
   Share2, 
@@ -7,10 +7,7 @@ import {
   Smartphone, 
   Sparkles, 
   CheckCircle2, 
-  Menu,
-  ShieldCheck,
-  Zap,
-  ArrowDown
+  Menu
 } from 'lucide-react';
 
 export const MandatoryInstallScreen: React.FC = () => {
@@ -127,31 +124,10 @@ export const MandatoryInstallScreen: React.FC = () => {
               Ярлык успешно добавлен! Откройте приложение с главного экрана вашего телефона.
             </span>
           ) : (
-            'Для работы сервиса необходимо добавить ярлык приложения на рабочий стол. Это откроет полноценный полноэкранный режим без рамок браузера.'
+            'Установите приложение на главный экран, чтобы пользоваться всеми возможностями сервиса.'
           )}
         </p>
 
-        {/* Benefits Card */}
-        <div className="w-full bg-slate-900/80 border border-slate-800/90 rounded-2xl p-4 text-left space-y-2.5 mb-6 backdrop-blur-xl shadow-xl">
-          <div className="flex items-center gap-2.5 text-xs text-slate-200">
-            <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-              <Zap className="w-3.5 h-3.5" />
-            </div>
-            <span>Полноэкранный режим без адресной строки</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-xs text-slate-200">
-            <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-            </div>
-            <span>Никаких всплывающих системных плашек</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-xs text-slate-200">
-            <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-3.5 h-3.5" />
-            </div>
-            <span>Мгновенный запуск прямо с рабочего стола</span>
-          </div>
-        </div>
 
         {/* Step-by-Step Instructions if native prompt unavailable or requested */}
         {showInstructions && !installedSuccessfully && (
@@ -218,11 +194,7 @@ export const MandatoryInstallScreen: React.FC = () => {
           </button>
         )}
 
-        <div className="mt-3 text-center">
-          <span className="text-[11px] text-slate-400">
-            Вход в систему доступен только через ярлык на главном экране
-          </span>
-        </div>
+
       </div>
     </div>
   );
